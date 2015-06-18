@@ -1,0 +1,24 @@
+{
+    "name": "amaxlab/git-web-hook",
+    "description": "Library for git web hook handle (supported and tested gitlab.com and github.com)",
+    "keywords": [ "git", "php", "web", "hook", "web-hook"],
+    "homepage": "https://github.com/amaxlab/git-web-hook",
+    "license": "MIT",
+    "type": "library",
+    "require": {
+        "php": ">=5.3",
+        "symfony/options-resolver": "~2.3",
+        "psr/log": "~1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "AmaxLab\\GitWebHook\\": "src"
+        }
+    },
+    "authors": [
+        {
+            "name": "Egor Zyuskin",
+            "email": "egor@zyuskin.ru"
+        }
+    ]
+}

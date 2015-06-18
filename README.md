@@ -83,7 +83,7 @@ $options = array(
 Logging
 -------
 
-Use loggers [PSR-3](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-3-logger-interface.md) standard ([Monolg](https://github.com/Seldaek/monolog))
+Use loggers [PSR-3](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-3-logger-interface.md) standard ([Monolog](https://github.com/Seldaek/monolog))
 
 ```php
 

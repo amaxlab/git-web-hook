@@ -60,7 +60,7 @@ class Repository
      * @param string $path
      * @param array  $options
      */
-    public function __construct($hook, $name, $path, array $options = array())
+    public function __construct(Hook $hook, $name, $path, array $options = array())
     {
         $this->hook = $hook;
         $this->path = $path;

@@ -37,7 +37,7 @@ class Command
      * @param string          $path    path from execute command
      * @param LoggerInterface $logger  logger
      */
-    public function __construct($command, $path, $logger)
+    public function __construct($command, $path, LoggerInterface $logger)
     {
         $this->command = $command;
         $this->path    = $path;

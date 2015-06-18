@@ -55,7 +55,7 @@ class Branch
      * @param string     $path       path for root directory of repository
      * @param array      $options    options
      */
-    public function __construct($repository, $name, $path, array $options = array())
+    public function __construct(Repository $repository, $name, $path, array $options = array())
     {
         $this->repository = $repository;
         $this->path = $path;

@@ -70,9 +70,10 @@ class Hook
     /**
      * Constructor
      *
-     * @param LoggerInterface $logger logger
-     * @param string          $path global path
+     * @param string          $path    global path
      * @param array           $options hook options
+     * @param LoggerInterface $logger  logger
+     *
      * @throws HttpException
      */
     public function __construct($path = '', array $options = array(), LoggerInterface $logger = null)

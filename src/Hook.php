@@ -183,10 +183,10 @@ class Hook
     private function checkAllow($where, $that)
     {
         if (is_array($where)) {
-            $this->logger->info('Checking permissions ' . $that . ', in: ' . print_r($where));
+            $this->logger->info('Checking permissions ' . $that . ', in: ' . var_export($where, true));
 
             return  in_array($that, $where) ? true : false;
-        } elseif ($where == '*' or (trim($where) == trim($that))) {
+        } elseif ($where == '*' || (trim($where) == trim($that))) {
             $this->logger->info('Checking permissions ' . $that . ', in: ' . $where);
 
             return true;

@@ -10,15 +10,27 @@
         "symfony/options-resolver": "~2.3",
         "psr/log": "~1.0"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^4.7"
+    },
     "autoload": {
         "psr-4": {
             "AmaxLab\\GitWebHook\\": "src"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.1.x-dev"
         }
     },
     "authors": [
         {
             "name": "Egor Zyuskin",
             "email": "egor@zyuskin.ru"
+        },
+        {
+            "name": "Igor Bbodnar",
+            "email": "bodnar_i@mail.ru"
         }
     ]
 }

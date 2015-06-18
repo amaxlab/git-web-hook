@@ -76,4 +76,4 @@ class Command
     {
         return $this->command;
     }
-} 
+}

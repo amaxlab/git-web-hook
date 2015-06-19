@@ -116,6 +116,41 @@ class Hook
         $this->call = new Call($this->logger, $request, array('securityCodeFieldName' => $this->options['securityCodeFieldName'], 'repositoryFieldName' => $this->options['repositoryFieldName']));
     }
 
+
+    /**
+     * @param string $dir
+     *
+     * @return int Count of loaded repos
+     */
+    public function loadRepos($dir)
+    {
+
+        $files = glob($dir.'*.php');
+        $count = 0;
+
+        foreach ($files as $file) {
+            $fileReturn = include $file;
+
+            if ($fileReturn instanceof RepositoryBuilder) {
+                $this->registerRepository($fileReturn->build($this));
+                $count++;
+                continue;
+            }
+
+            if (is_array($fileReturn)) {
+                foreach ($fileReturn as $builder) {
+                    if ($builder instanceof RepositoryBuilder) {
+                        $this->registerRepository($builder->build($this));
+                        $count++;
+                    }
+                }
+            }
+        }
+
+        return $count;
+
+    }
+
     /**
      * @param string $name
      * @param string $path
@@ -129,13 +164,33 @@ class Hook
             $path = $this->path;
         }
 
-        if (!isset($this->repositoryList[$name])) {
-            $this->logger->info('Add repository ' . $name . ', path: ' . $path);
+        return $this->registerRepository(new Repository($this, $name, $path, $options));
+    }
 
-            $this->repositoryList[$name] = new Repository($this, $name, $path, $options);
+    /**
+     * @param RepositoryBuilder $builder
+     *
+     * @return Repository
+     */
+    public function addRepositoryBuilder(RepositoryBuilder $builder)
+    {
+        return $this->registerRepository($builder->build($this));
+    }
+
+    /**
+     * @param Repository $repository
+     *
+     * @return Repository
+     */
+    public function registerRepository(Repository $repository)
+    {
+        if (!isset($this->repositoryList[$repository->getName()])) {
+            $this->logger->info(sprintf('Add repository %s, path: %s', $repository->getName(), $repository->getPath()));
+
+            $this->repositoryList[$repository->getName()] = $repository;
         }
 
-        return $this->repositoryList[$name];
+        return $this->repositoryList[$repository->getName()];
     }
 
     /**

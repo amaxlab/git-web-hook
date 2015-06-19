@@ -186,4 +186,12 @@ class Repository
     {
         return $this->name;
     }
+
+    /**
+     * @return string
+     */
+    public function getPath()
+    {
+        return $this->path;
+    }
 }

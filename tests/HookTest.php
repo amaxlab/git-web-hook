@@ -81,4 +81,59 @@ class HookTest extends GWHTestCase
         $content = file_get_contents($logFile);
         $this->assertEmpty($content, sprintf('Log file is not empty: %s', $content));
     }
+
+    public function testLoadRepos()
+    {
+        $options = array(
+            'sendEmails'          => false,
+            'sendEmailAuthor'     => false,
+            'mailRecipients'      => array(),
+            'allowedAuthors'      => '*',
+            'allowedHosts'        => '*',
+        );
+        $hook = new Hook(__DIR__, $options);
+
+        $fs = new Filesystem();
+        $reposDir = sys_get_temp_dir().'/test_GWH/repos.d/';
+        $this->markDirToBeRemoved($reposDir);
+        try {
+            $fs->mkdir($reposDir);
+        } catch (IOExceptionInterface $e) {
+            $this->fail(sprintf('Can\'t create directory %s', $reposDir));
+        }
+
+        $count = $hook->loadRepos($reposDir);
+        $this->assertEquals(0, $count, 'Wrong number of loaded repositories');
+
+        try {
+            $fs->touch($reposDir.'test.php');
+        } catch (IOExceptionInterface $e) {
+            $this->fail('Can\'t create logfile');
+        }
+
+        $str = <<<'EOD'
+<?php $builder = new \AmaxLab\GitWebHook\RepositoryBuilder();
+$builder->setName('test@name');
+
+return  $builder;
+EOD;
+
+        file_put_contents($reposDir.'test.php', $str);
+        $count = $hook->loadRepos($reposDir);
+        $this->assertEquals(1, $count, 'Wrong number of loaded repositories');
+
+        $str2 = <<<'EOD'
+<?php $builder1 = new \AmaxLab\GitWebHook\RepositoryBuilder();
+$builder1->setName('test1@name');
+
+$builder2 = new \AmaxLab\GitWebHook\RepositoryBuilder();
+$builder2->setName('test2@name');
+
+return array($builder1, $builder2);
+EOD;
+
+        file_put_contents($reposDir.'test.php', $str2);
+        $count = $hook->loadRepos($reposDir);
+        $this->assertEquals(2, $count, 'Wrong number of loaded repositories');
+    }
 }

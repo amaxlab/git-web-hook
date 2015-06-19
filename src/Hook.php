@@ -9,6 +9,7 @@
 namespace AmaxLab\GitWebHook;
 
 use HttpException;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -37,15 +38,19 @@ class Hook
     protected $repositoryList = array();
 
     /**
-     * @var Request
+     * @var Call
      */
-    protected $request;
+    protected $call;
 
     /**
      * @var LoggerInterface
      */
     protected $logger;
 
+    /**
+     * @var Request
+     */
+    protected $request;
     /**
      * @var array|Command[]
      */
@@ -73,25 +78,30 @@ class Hook
      * @param string          $path    global path
      * @param array           $options hook options
      * @param LoggerInterface $logger  logger
+     * @param Request         $request Symfony call object
      *
-     * @throws HttpException
      */
-    public function __construct($path = '', array $options = array(), LoggerInterface $logger = null)
+    public function __construct($path = '', array $options = array(), LoggerInterface $logger = null, Request $request = null)
     {
         if (!$logger) {
             $logger = new NullLogger();
+        }
+
+        if (!$request) {
+            $request = Request::createFromGlobals();
         }
 
         if (!$path) {
             $path = getcwd();
         }
         $this->path = $path;
+        $this->request = $request;
 
         $resolver = new OptionsResolver();
         $resolver->setDefaults(array(
             'sendEmails'            => false,
             'sendEmailAuthor'       => false,
-            'sendEmailFrom'         => 'git-web-hook@'.gethostname(),
+            'sendEmailFrom'         => 'git-web-hook@'.$this->request->getHost(),
             'mailRecipients'        => array(),
             'allowedAuthors'        => array(),
             'allowedHosts'          => array(),
@@ -105,7 +115,7 @@ class Hook
 
         $this->logger->debug('Create hook with params ' . json_encode($this->options));
 
-        $this->request = new Request($this->logger, array('securityCodeFieldName' => $this->options['securityCodeFieldName'], 'repositoryFieldName' => $this->options['repositoryFieldName']));
+        $this->call = new Call($this->logger, $request, array('securityCodeFieldName' => $this->options['securityCodeFieldName'], 'repositoryFieldName' => $this->options['repositoryFieldName']));
     }
 
     /**
@@ -204,21 +214,21 @@ class Hook
      */
     private function checkPermissions($securityCode, $author, $host)
     {
-        if ($securityCode && $securityCode != $this->request->getSecurityCode()) {
+        if ($securityCode && $securityCode != $this->call->getSecurityCode()) {
             $this->logger->warning('Security code not match');
-            $this->logger->debug('Config: '.$securityCode . ' != $_GET:' . $this->request->getSecurityCode());
+            $this->logger->debug('Config: '.$securityCode . ' != $_GET:' . $this->call->getSecurityCode());
 
             return false;
         }
 
-        if (!$this->checkAllow($host, $this->request->getHost())) {
-            $this->logger->warning('Host ' . $this->request->getHost() . ' not allowed on this branch');
+        if (!$this->checkAllow($host, $this->call->getHost())) {
+            $this->logger->warning('Host ' . $this->call->getHost() . ' not allowed on this branch');
 
             return false;
         }
 
-        if (!$this->checkAllow($author, $this->request->getAuthor())) {
-            $this->logger->warning('Author ' . $this->request->getAuthor() . ' not allowed on this branch');
+        if (!$this->checkAllow($author, $this->call->getAuthor())) {
+            $this->logger->warning('Author ' . $this->call->getAuthor() . ' not allowed on this branch');
 
             return false;
         }
@@ -242,9 +252,9 @@ class Hook
 
         $hr = '<tr><td colspan="2"><hr></td></tr>';
         $message = '<html><head><title>'.$subject.'</title></head><body><table>'
-                  .'<tr><td><b>Author</b></td><td>' . $this->request->getAuthorFull() . '</td></tr>'
-                  .'<tr><td><b>Message</b></td><td>' . $this->request->getMessage() . '</td></tr>'
-                  .'<tr><td><b>Timestamp</b></td><td>' . $this->request->getTimestamp() . '</td></tr>'.$hr;
+                  .'<tr><td><b>Author</b></td><td>' . $this->call->getAuthorFull() . '</td></tr>'
+                  .'<tr><td><b>Message</b></td><td>' . $this->call->getMessage() . '</td></tr>'
+                  .'<tr><td><b>Timestamp</b></td><td>' . $this->call->getTimestamp() . '</td></tr>'.$hr;
 
 
         foreach ($resultCommands as $result) {
@@ -281,7 +291,7 @@ class Hook
 
         $mailRecipients  = $options['mailRecipients'];
         if ($options['sendEmailAuthor']) {
-            $mailRecipients[] = $this->request->getAuthor();
+            $mailRecipients[] = $this->call->getAuthor();
         }
         $mailRecipients = array_unique($mailRecipients);
 
@@ -319,10 +329,10 @@ class Hook
     {
         $this->logger->info('Starting web hook handle');
 
-        if (!$this->request->isIsValid()) {
-            $this->logger->error('Request from ' . $this->request->getHost() . ' not valid');
+        if (!$this->call->isIsValid()) {
+            $this->logger->error('Call from ' . $this->call->getHost() . ' not valid');
 
-            $this->request->return404();
+            $this->call->return404();
 
             return;
         }
@@ -332,14 +342,14 @@ class Hook
             $this->sendEmails('Hook', $commandsResult, $this->options);
         }
 
-        if ($repository = $this->getRepository($this->request->getRepository())) {
+        if ($repository = $this->getRepository($this->call->getRepository())) {
             $options = $repository->getOptions();
             if ($repository->getCommandsCount() > 0 && $this->checkPermissions($options['securityCode'], $options['allowedAuthors'], $options['allowedHosts'])) {
                 $commandsResult = $repository->executeCommands();
                 $this->sendEmails($repository->getName(), $commandsResult, $options);
             }
 
-            if ($branch = $repository->addBranch($this->request->getBranch())) {
+            if ($branch = $repository->addBranch($this->call->getBranch())) {
                 $options = $branch->getOptions();
                 if ($branch->getCommandsCount() > 0 && $this->checkPermissions($options['securityCode'], $options['allowedAuthors'], $options['allowedHosts'])) {
                     $commandsResult = $branch->executeCommands();
@@ -349,7 +359,7 @@ class Hook
         } else {
             // Disable warning for global hook
             if (!empty($this->commandsList) && $this->getRepositoryCount() == 0) {
-                $this->logger->warning('Repository: ' . $this->request->getRepository() . ' and branch: ' . $this->request->getBranch() . ' not found in the settings');
+                $this->logger->warning('Repository: ' . $this->call->getRepository() . ' and branch: ' . $this->call->getBranch() . ' not found in the settings');
             }
         }
         $this->logger->info('End of web hook handle');

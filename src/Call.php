@@ -8,16 +8,18 @@
 
 namespace AmaxLab\GitWebHook;
 
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Psr\Log\LoggerInterface;
 
 
 /**
- * Class Request
+ * Class Call
  *
  * @package AmaxLab\GitWebHook
  */
-class Request
+class Call
 {
     /**
      * @var array
@@ -75,10 +77,16 @@ class Request
     protected $isValid = true;
 
     /**
+     * @var Request
+     */
+    protected $request;
+
+    /**
      * @param LoggerInterface $logger
+     * @param Request         $request
      * @param array           $options
      */
-    public function __construct(LoggerInterface $logger, array $options = array())
+    public function __construct(LoggerInterface $logger, Request $request, array $options = array())
     {
         $this->logger = $logger;
 
@@ -89,31 +97,34 @@ class Request
         ));
         $this->options = $resolver->resolve($options);
 
-        $this->logger->debug('Create request with params ' . json_encode($this->options));
-        $this->logger->debug('Request server values: ' . json_encode($_SERVER));
+        $this->request = $request;
+        $this->logger->debug('Create call with params ' . json_encode($this->options));
+        $this->logger->debug('Request server values: ' . json_encode($this->request->server));
 
         //TODO: Возможен запрос через прокси нужно учитывать
-        $this->host = $_SERVER['REMOTE_ADDR'];
-        $this->securityCode = (isset($_GET[$this->options['securityCodeFieldName']])) ? trim(htmlspecialchars($_GET[$this->options['securityCodeFieldName']]), ENT_QUOTES) : "";
+        $this->host = $this->request->getClientIp();
+        $queryBag = $this->request->query;
+        $this->securityCode = $queryBag->has('securityCodeFieldName')?$queryBag->get('securityCodeFieldName'): '';
 
-        $json = trim(@file_get_contents('php://input'));
+        $body = $this->request->getContent();
 
-        if (!$json) {
-            $this->logger->error('Request content is null');
+        if (!$body) {
+            $this->logger->error('Call content is null');
             $this->isValid = false;
 
             return;
         }
 
-        $this->logger->debug('Request content: ' . $json);
+        $this->logger->debug('Call content: ' . $body);
 
         try {
-            $json = json_decode($json, true);
+            $json = json_decode($body, true);
             if (isset($json['ref'])) {
-                $this->author     = $json['commits'][count($json['commits'])-1]['author']['email'];
-                $this->authorName = $json['commits'][count($json['commits'])-1]['author']['name'];
-                $this->message    = $json['commits'][count($json['commits'])-1]['message'];
-                $this->timestamp  = $json['commits'][count($json['commits'])-1]['timestamp'];
+                $count = count($json['commits'])-1;
+                $this->author     = $json['commits'][$count]['author']['email'];
+                $this->authorName = $json['commits'][$count]['author']['name'];
+                $this->message    = $json['commits'][$count]['message'];
+                $this->timestamp  = $json['commits'][$count]['timestamp'];
                 $this->repository = $json['repository'][$this->options['repositoryFieldName']];
                 $this->branch     = substr($json['ref'], strrpos($json['ref'], '/')+1);
             } else {
@@ -131,7 +142,8 @@ class Request
     public function return404()
     {
         $this->logger->warning('return 404');
-        header($_SERVER["SERVER_PROTOCOL"]." 404 Not Found");
+        $response = new Response(null, 404);
+        $response->send();
     }
 
     /**
@@ -140,7 +152,8 @@ class Request
     public function return403()
     {
         $this->logger->warning('return 403');
-        header($_SERVER["SERVER_PROTOCOL"]." 403 Access denied");
+        $response = new Response(null, 403);
+        $response->send();
     }
 
     /**

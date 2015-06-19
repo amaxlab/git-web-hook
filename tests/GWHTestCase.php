@@ -27,33 +27,6 @@ class GWHTestCase extends \PHPUnit_Framework_TestCase
     protected $dirsToRemove;
 
     /**
-     * Recursively remove directory and all files inside it
-     *
-     * @param string $dir
-     *
-     * @return bool
-     */
-    public function removeDir($dir)
-    {
-        if (!is_dir($dir) && !is_file($dir)) {
-            return true;
-        }
-        $it = new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS);
-        $files = new RecursiveIteratorIterator($it,
-            RecursiveIteratorIterator::CHILD_FIRST);
-        foreach($files as $file) {
-            if ($file->isDir()){
-                rmdir($file->getRealPath());
-            } else {
-                unlink($file->getRealPath());
-            }
-        }
-        rmdir($dir);
-
-        return true;
-    }
-
-    /**
      * Mark directory to be removed
      *
      * @param $dir

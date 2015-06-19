@@ -8,12 +8,10 @@
 
 namespace AmaxLab\GitWebHook;
 
-use HttpException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-
 
 /**
  * Class Hook

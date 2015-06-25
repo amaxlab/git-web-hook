@@ -54,8 +54,7 @@ class GWHTestCase extends \PHPUnit_Framework_TestCase
         try {
             $fs->chmod($this->dirsToRemove, 0777, 0000, true);
             $fs->remove($this->dirsToRemove);
-        } catch (IOException $e) {
-        }
+        } catch (IOException $e) { }
 
     }
 }

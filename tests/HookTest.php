@@ -102,38 +102,49 @@ class HookTest extends GWHTestCase
             $this->fail(sprintf('Can\'t create directory %s', $reposDir));
         }
 
-        $count = $hook->loadRepos($reposDir);
-        $this->assertEquals(0, $count, 'Wrong number of loaded repositories');
-
+        $testFile1 = $reposDir.'test1.php';
+        $testFile2 = $reposDir.'test2.php';
         try {
-            $fs->touch($reposDir.'test.php');
+            $fs->touch(array($testFile1, $testFile2));
         } catch (IOExceptionInterface $e) {
             $this->fail('Can\'t create logfile');
         }
 
-        $str = <<<'EOD'
-<?php $builder = new \AmaxLab\GitWebHook\RepositoryBuilder();
-$builder->setName('test@name');
+        $count = $hook->loadRepos($testFile1);
+        $this->assertEquals(0, $count, 'Wrong number of loaded repositories');
 
-return  $builder;
-EOD;
+        for ($i = 1; $i <=3; $i++) {
+            $this->generateBuilderFile($testFile1, $i);
+            $count = $hook->loadRepos($reposDir);
+            $this->assertEquals($i, $count, sprintf('Wrong number of loaded repositories, found %s, expected %s', $count, $i));
+        }
 
-        file_put_contents($reposDir.'test.php', $str);
+        $this->generateBuilderFile($testFile2, 2);
         $count = $hook->loadRepos($reposDir);
-        $this->assertEquals(1, $count, 'Wrong number of loaded repositories');
+        $this->assertEquals(5, $count, sprintf('Wrong number of loaded repositories, found %s, expected %s', $count, 5));
+    }
 
-        $str2 = <<<'EOD'
-<?php $builder1 = new \AmaxLab\GitWebHook\RepositoryBuilder();
-$builder1->setName('test1@name');
+    /**
+     * @param string $file
+     * @param int    $countOfBuilders
+     */
+    private function generateBuilderFile($file, $countOfBuilders)
+    {
+        $output = '<?php'."\r\n";
+        $output .= '$builders = array();'."\r\n";
 
-$builder2 = new \AmaxLab\GitWebHook\RepositoryBuilder();
-$builder2->setName('test2@name');
+        for ($i = 1; $i <= $countOfBuilders; $i++) {
+            $output .= '$builder'.$i.' = new \AmaxLab\GitWebHook\RepositoryBuilder();'."\r\n";
+            $output .= '$builder'.$i.'->setName(\'test'.$i.'@name\');'."\r\n";
+            $output .= '$builders[] = $builder'.$i.';'."\r\n";
+        }
 
-return array($builder1, $builder2);
-EOD;
+        if ($countOfBuilders == 1) {
+            $output .= 'return $builder1;'."\r\n";
+        } else {
+            $output .= 'return $builders;'."\r\n";
+        }
 
-        file_put_contents($reposDir.'test.php', $str2);
-        $count = $hook->loadRepos($reposDir);
-        $this->assertEquals(2, $count, 'Wrong number of loaded repositories');
+        file_put_contents($file, $output);
     }
 }

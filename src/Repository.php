@@ -8,6 +8,7 @@
 
 namespace AmaxLab\GitWebHook;
 
+use Psr\Log\NullLogger;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Psr\Log\LoggerInterface;
 
@@ -19,10 +20,6 @@ use Psr\Log\LoggerInterface;
  */
 class Repository
 {
-    /**
-     * @var Hook
-     */
-    protected $hook;
 
     /**
      * @var string
@@ -55,22 +52,21 @@ class Repository
     protected $branchesList = array();
 
     /**
-     * @param Hook   $hook
-     * @param string $name
-     * @param string $path
-     * @param array  $options
+     * @param string          $name           Name on the repository
+     * @param string          $path           Path to execute commands
+     * @param array           $options        Options related to current repository
+     * @param array           $defaultOptions Default options passed from hook options
+     * @param LoggerInterface $logger         Logger
      */
-    public function __construct(Hook $hook, $name, $path, array $options = array())
+    public function __construct($name, $path, array $options = array(), array $defaultOptions = array(), LoggerInterface $logger)
     {
-        $this->hook = $hook;
         $this->path = $path;
         $this->name = $name;
+        $this->logger = $logger?$logger:new NullLogger();
 
         $resolver = new OptionsResolver();
-        $resolver->setDefaults($hook->getOptions());
+        $resolver->setDefaults($defaultOptions);
         $this->options = $resolver->resolve($options);
-
-        $this->logger = $hook->getLogger();
 
         $this->logger->debug('Create repository with params ' . json_encode($this->options));
     }

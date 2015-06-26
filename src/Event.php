@@ -15,11 +15,11 @@ use Psr\Log\LoggerInterface;
 
 
 /**
- * Class Call
+ * Class Event
  *
  * @package AmaxLab\GitWebHook
  */
-class Call
+class Event
 {
     /**
      * @var array
@@ -90,12 +90,7 @@ class Call
     {
         $this->logger = $logger;
 
-        $resolver = new OptionsResolver();
-        $resolver->setDefaults(array(
-            'securityCodeFieldName' => 'code',
-            'repositoryFieldName'   => 'url',
-        ));
-        $this->options = $resolver->resolve($options);
+        $this->options = $this->configureOptions($options);
 
         $this->request = $request;
         $this->logger->debug('Create call with params ' . json_encode($this->options));
@@ -109,51 +104,33 @@ class Call
         $body = $this->request->getContent();
 
         if (!$body) {
-            $this->logger->error('Call content is null');
+            $this->logger->error('Event content is null');
             $this->isValid = false;
 
             return;
         }
 
-        $this->logger->debug('Call content: ' . $body);
+        $this->logger->debug('Event content: ' . $body);
 
         try {
             $json = json_decode($body, true);
-            if (isset($json['ref'])) {
-                $count = count($json['commits'])-1;
-                $this->author     = $json['commits'][$count]['author']['email'];
-                $this->authorName = $json['commits'][$count]['author']['name'];
-                $this->message    = $json['commits'][$count]['message'];
-                $this->timestamp  = $json['commits'][$count]['timestamp'];
-                $this->repository = $json['repository'][$this->options['repositoryFieldName']];
-                $this->branch     = substr($json['ref'], strrpos($json['ref'], '/')+1);
-            } else {
-                $this->isValid = false;
-            }
         } catch (\Exception $e) {
             $this->logger->error('Exception on decode json text');
             $this->isValid = false;
         }
-    }
 
-    /**
-     * Return 404 url
-     */
-    public function return404()
-    {
-        $this->logger->warning('return 404');
-        $response = new Response(null, 404);
-        $response->send();
-    }
+        if (!isset($json['ref'])) {
+            $this->isValid = false;
+            return;
+        }
 
-    /**
-     * Return 403 url
-     */
-    public function return403()
-    {
-        $this->logger->warning('return 403');
-        $response = new Response(null, 403);
-        $response->send();
+        $count = count($json['commits'])-1;
+        $this->author     = $json['commits'][$count]['author']['email'];
+        $this->authorName = $json['commits'][$count]['author']['name'];
+        $this->message    = $json['commits'][$count]['message'];
+        $this->timestamp  = $json['commits'][$count]['timestamp'];
+        $this->repository = $json['repository'][$this->options['repositoryFieldName']];
+        $this->branch     = substr($json['ref'], strrpos($json['ref'], '/')+1);
     }
 
     /**
@@ -234,5 +211,21 @@ class Call
     public function getTimestamp()
     {
         return $this->timestamp;
+    }
+
+    /**
+     * @param array $options
+     *
+     * @return array
+     */
+    private function configureOptions(array $options)
+    {
+        $resolver = new OptionsResolver();
+        $resolver->setDefaults(array(
+            'securityCodeFieldName' => 'code',
+            'repositoryFieldName'   => 'url',
+        ));
+
+        return $resolver->resolve($options);
     }
 }

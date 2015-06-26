@@ -41,7 +41,7 @@ class RepositoryBuilder
      */
     public function build(Hook $hook)
     {
-        $repository = new Repository($hook, $this->getName(), $this->getPath(), $this->getOptions());
+        $repository = new Repository($this->getName(), $this->getPath(), $this->getOptions(), $hook->getOptions(), $hook->getLogger());
 
         return $repository;
     }

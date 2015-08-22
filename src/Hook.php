@@ -185,7 +185,6 @@ class Hook
 
         if (!empty($this->commandsList) && $this->checkPermissions($event, $this->options)) {
             $commandsResult['hook'] = $this->executeCommands();
-            //$this->sendEmails($event, 'Hook', $commandsResult, $this->options);
         }
 
         $repository = $this->getRepository($event->getRepositoryName());
@@ -199,13 +198,11 @@ class Hook
 
         if ($this->checkPermissions($event, $repository->getOptions())) {
             $commandsResult['repository'] = $repository->executeCommands($this->path);
-            //$this->sendEmails($event, $repository->getName(), $commandsResult, $repository->getOptions());
         }
 
 
         if ($this->checkPermissions($event, $branch->getOptions())) {
             $commandsResult['branch'] = $branch->executeCommands($repository->getPath());
-            //$this->sendEmails($event, $branch->getName() . ' (' . $repository->getName() . ')', $commandsResult, $branch->getOptions());
         }
 
         $this->sendEmails($event, $commandsResult);

@@ -95,7 +95,6 @@ class Event
         $this->logger->debug('Create call with params ' . json_encode($this->options));
         $this->logger->debug('Request server values: ' . json_encode($this->request->server));
 
-        //TODO: Возможен запрос через прокси нужно учитывать
         $this->host = $this->request->getClientIp();
         $queryBag = $this->request->query;
         $this->securityCode = $queryBag->has('securityCodeFieldName')?$queryBag->get('securityCodeFieldName'): '';

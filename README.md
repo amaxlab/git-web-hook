@@ -168,6 +168,7 @@ in the log file
 TODO
 ----
 
+* Add configuration for trusted proxies
 * Add possibility of defining full configuration (not only repositories) thought yaml files.
 * Add possibility of defining array of securityCodes
 

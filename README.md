@@ -52,7 +52,7 @@ $options = array(
 
 $hook = new Hook(__DIR__, $options);
 $hook
-	->addRepository('git@github.com:amaxlab/git-web-hook.git', '/var/www/me_project_folder/web', array(/*command executed on each push to repository*/))
+	->addRepository('git@github.com:amaxlab/git-web-hook.git', '/var/www/my_project_folder/web', array(/*command executed on each push to repository*/))
 		->addBranch('master', array('git status', 'git reset --hard HEAD', 'git pull origin master'), '/var/www/my_project_folder/demo_subdomain',  array(/* array of redefined options*/)) // commands executed on push to specified branch in /var/www/html/my_site/ folder
  		->addBranch('production', 'git pull origin production');
 

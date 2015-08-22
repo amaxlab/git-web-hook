@@ -13,6 +13,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Symfony\Component\Yaml\Exception\ParseException;
+use Symfony\Component\Yaml\Parser;
 
 /**
  * Class Hook
@@ -88,18 +90,30 @@ class Hook
     /**
      * @param string $dir
      *
-     * @return int Count of loaded repos
+     * @return int Count of loaded repositories
      */
     public function loadRepos($dir)
     {
 
-        $files = glob($dir.'*.php');
+        $files = glob($dir.'*.yml');
         $count = 0;
 
         foreach ($files as $file) {
-            $fileReturn = include $file;
+            $yaml = new Parser();
+            try {
+                $value = $yaml->parse(file_get_contents($file));
+            } catch (ParseException $e) {
+                $this->logger->error(sprintf('Unable to parse the YAML string: %s in %s', $e->getMessage(), $e->getParsedFile()));
+                continue;
+            }
 
-            $count += $this->handleRepoArray($fileReturn);
+            if (is_array($value) && array_key_exists('repositories', $value)) {
+                foreach ($value['repositories'] as $repoName => $repoConf) {
+                    $this->addRepository($repoName, $repoConf['path'], $repoConf['options'], $repoConf['commands']);
+                    $count++;
+                }
+            }
+
         }
 
         return $count;
@@ -115,37 +129,11 @@ class Hook
      */
     public function addRepository($name, $path = null, array $options = array(), $commands = null)
     {
-        if (!$path) {
-            $path = $this->path;
-        }
+        $path = $path?$path:$this->path;
 
-        $builder = new RepositoryBuilder();
-        $builder
-            ->setName($name)
-            ->setPath($path)
-            ->setOptions($options)
-            ->setCommands($commands);
+        $repository = new Repository($name, $path, $options, $this->options, $this->logger);
+        $commands && $repository->addCommand($commands);
 
-        return $this->registerRepository($builder->build($this));
-    }
-
-    /**
-     * @param RepositoryBuilder $builder
-     *
-     * @return Repository
-     */
-    public function addRepositoryBuilder(RepositoryBuilder $builder)
-    {
-        return $this->registerRepository($builder->build($this));
-    }
-
-    /**
-     * @param Repository $repository
-     *
-     * @return Repository
-     */
-    public function registerRepository(Repository $repository)
-    {
         if (!isset($this->repositoryList[$repository->getName()])) {
             $this->logger->info(sprintf('Add repository %s, path: %s', $repository->getName(), $repository->getPath()));
 
@@ -421,27 +409,6 @@ class Hook
             'securityCodeFieldName' => $this->options['securityCodeFieldName'],
             'repositoryFieldName'   => $this->options['repositoryFieldName'],
         ));
-    }
-
-    /**
-     * @param array|RepositoryBuilder|RepositoryBuilder[] $data
-     *
-     * @return int
-     */
-    private function handleRepoArray($data)
-    {
-        $count = 0;
-        if (is_array($data)) {
-            foreach ($data as $dataElement) {
-                $count += $this->handleRepoArray($dataElement);
-            }
-        }
-        if ($data instanceof RepositoryBuilder) {
-            $this->registerRepository($data->build($this));
-            $count += 1;
-        }
-
-        return $count;
     }
 
     /**

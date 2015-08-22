@@ -7,8 +7,8 @@ Features
 --------
 
 - Run commands by global get request
-- Run commands by hook on git repository
-- Run commands by hook on some branch
+- Run commands by git repository push
+- Run commands by some branch push
 - Security check commit author (global, repository, branch)
 - Security check param from $_GET request
 - Send email author and mail recipients with the results of the execute command
@@ -17,7 +17,8 @@ Require
 -------
 
 - php >= 5.3
-- symfony/options-resolver >= ~2.3
+- symfony/options-resolver ^2.3
+- symfony/yaml ^2.3
 - psr/log >= ~1.0
 
 Install
@@ -74,9 +75,9 @@ $options = array(
     'sendEmails'            => false,                          // Enable or disable sending emails
     'sendEmailAuthor'       => false,                          // Enable or disable sending email commit author
     'sendEmailFrom'         => 'git-web-hook@'.gethostname(),  // Email address from which messages are sent
-    'mailRecipients'        => array(),                        // Array subscriber 
-    'allowedAuthors'        => array(),                        // Array authors email allowed on this branch
-    'allowedHosts'          => array(),                        // Array hosts allowed on this branch
+    'mailRecipients'        => array(),                        // Array of subscribers
+    'allowedAuthors'        => array(),                        // Array of commit authors allowed to execute commands
+    'allowedHosts'          => array(),                        // Array of hook hosts allowed to execute commands
     'securityCode'          => '',                             // Security code on check $_GET request
     'securityCodeFieldName' => 'code',                         // $_GET field name of security code
     'repositoryFieldName'   => 'url',                          // Repository filed name on the JSON query
@@ -107,7 +108,7 @@ $hook = new Hook(__DIR__, $options, $logger);
 Load repository configuration
 -----------------------------
 
-If you have a lot of repositories you can place them in separate files and load all configuration from a directory:
+If you have a lot of repositories you can place them in separate *.yml files and load all configuration from a directory:
 
 ```php
 <?php
@@ -118,17 +119,26 @@ $hook->execute();
 ```
 
 Example of configuration file:
-```php
-<?php
-$builder = new \AmaxLab\GitWebHook\RepositoryBuilder();
-$builder
-    ->setName('git@github.com:amaxlab/git-web-hook-test.git')
-    //->setPath()
-    //->setOptions()
-    //->setCommand()
-;
+```yml
 
-return $builder; // or return $arrayOfBuilder
+repositories:
+    git@github.com:amaxlab/git-web-hook-test.git:
+        path: null
+        options: {}
+        commands: 
+          - git status
+        branch:
+            master:
+                path: null
+                options: {}
+                commands: 
+                  - git reset --hard HEAD
+                  - git pull origin master
+            production:
+                commands: 
+                  - git reset --hard HEAD
+                  - git pull origin production
+
 ```
 
 Security code checking configuration
@@ -154,6 +164,12 @@ if security code not pass check the you see
 Jan 01 00:00:00 WARN Security code not match
 ```
 in the log file
+
+TODO
+----
+
+* Add possibility of defining full configuration (not only repositories) thought yaml files.
+* Add possibility of defining array of securityCodes
 
 License
 --------

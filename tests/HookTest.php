@@ -101,8 +101,8 @@ class HookTest extends GWHTestCase
             $this->fail(sprintf('Can\'t create directory %s', $reposDir));
         }
 
-        $testFile1 = $reposDir.'test1.php';
-        $testFile2 = $reposDir.'test2.php';
+        $testFile1 = $reposDir.'test1.yml';
+        $testFile2 = $reposDir.'test2.yml';
         try {
             $fs->touch(array($testFile1, $testFile2));
         } catch (IOExceptionInterface $e) {
@@ -129,19 +129,27 @@ class HookTest extends GWHTestCase
      */
     private function generateBuilderFile($file, $countOfBuilders)
     {
-        $output = '<?php'."\r\n";
-        $output .= '$builders = array();'."\r\n";
+        $output = "repositories:\r\n";
+
 
         for ($i = 1; $i <= $countOfBuilders; $i++) {
-            $output .= '$builder'.$i.' = new \AmaxLab\GitWebHook\RepositoryBuilder();'."\r\n";
-            $output .= '$builder'.$i.'->setName(\'test'.$i.'@name\');'."\r\n";
-            $output .= '$builders[] = $builder'.$i.';'."\r\n";
-        }
-
-        if ($countOfBuilders == 1) {
-            $output .= 'return $builder1;'."\r\n";
-        } else {
-            $output .= 'return $builders;'."\r\n";
+            $output .= '    git@github.com:amaxlab/git-web-hook-test'.$i.'.git:
+        path: null
+        options: {}
+        commands:
+          - git status
+        branch:
+            master:
+                path: null
+                options: {}
+                commands:
+                  - git reset --hard HEAD
+                  - git pull origin master
+            production:
+                commands:
+                  - git reset --hard HEAD
+                  - git pull origin production
+';
         }
 
         file_put_contents($file, $output);

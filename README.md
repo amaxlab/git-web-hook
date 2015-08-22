@@ -50,15 +50,18 @@ $options = array(
 );
 
 $hook = new Hook(__DIR__, $options);
-
-$hook->addRepository('git@github.com:amaxlab/git-web-hook.git')
-     ->addBranch('master')
-     ->addCommand(array('git status', 'git reset --hard HEAD', 'git pull origin master'))
-     ->getParent()
-     ->addBranch('production')
-     ->addCommand('git pull origin production');
+$hook
+	->addRepository('git@github.com:amaxlab/git-web-hook.git', '/var/www/me_project_folder/web', array(/*command executed on each push to repository*/))
+		->addBranch('master', array('git status', 'git reset --hard HEAD', 'git pull origin master'), '/var/www/my_project_folder/demo_subdomain',  array $options = array()) // commands executed on push to specified branch in /var/www/html/my_site/ folder
+ 		->addBranch('production', 'git pull origin production');
 
 $hook->execute();
+```
+
+You can also specify some commands to execute them on hook call:
+
+```php
+$hook->addCommand($someCommand);
 ```
 
 Configuration
@@ -99,6 +102,33 @@ $logger->pushHandler(new StreamHandler(__DIR__ . '/hook.log', Logger::WARNING));
 
 $hook = new Hook(__DIR__, $options, $logger);
 
+```
+
+Load repository configuration
+-----------------------------
+
+If you have a lot of repositories you can place them in separate files and load all configuration from a directory:
+
+```php
+<?php
+
+$hook = new Hook(__DIR__, $options);
+$hook->loadRepos('/path/to/derectory/');
+$hook->execute();
+```
+
+Example of configuration file:
+```php
+<?php
+$builder = new \AmaxLab\GitWebHook\RepositoryBuilder();
+$builder
+    ->setName('git@github.com:amaxlab/git-web-hook-test.git')
+    //->setPath()
+    //->setOptions()
+    //->setCommand()
+;
+
+return $builder; // or return $arrayOfBuilder
 ```
 
 Security code checking configuration

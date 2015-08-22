@@ -70,11 +70,10 @@ class HookTest extends GWHTestCase
         $hook = new Hook($repoDir, $options, $logger, $requestMock);
 
         $hook->addRepository($repoUrl)
-            ->addBranch('master')
-                ->addCommand(array(
-                    'git status',
-                    'git pull origin master',
-                ));
+            ->addBranch('master', array(
+                'git status',
+                'git pull origin master',
+            ));
 
 
         $hook->execute();

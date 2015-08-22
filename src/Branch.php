@@ -8,7 +8,6 @@
 
 namespace AmaxLab\GitWebHook;
 
-use Symfony\Component\OptionsResolver\OptionsResolver;
 use Psr\Log\LoggerInterface;
 
 
@@ -19,10 +18,6 @@ use Psr\Log\LoggerInterface;
  */
 class Branch
 {
-    /**
-     * @var Repository
-     */
-    protected $repository;
 
     /**
      * @var string
@@ -50,20 +45,18 @@ class Branch
     protected $commandsList = array();
 
     /**
-     * @param Repository $repository Repository owen this branch
-     * @param string     $name       Name of branch
-     * @param string     $path       path for root directory of repository
-     * @param array      $options    options
+     * @param Repository $repository     Repository owen this branch
+     * @param string     $name           Name of branch
+     * @param string     $path           path for root directory of repository
+     * @param array      $options        options
+     * @param array      $defaultOptions Options passed from repository
      */
-    public function __construct(Repository $repository, $name, $path, array $options = array())
+    public function __construct(Repository $repository, $name, $path, array $options = array(), array $defaultOptions)
     {
-        $this->repository = $repository;
         $this->path = $path;
         $this->name = $name;
 
-        $resolver = new OptionsResolver();
-        $resolver->setDefaults($repository->getOptions());
-        $this->options = $resolver->resolve($options);
+        $this->options = array_merge($defaultOptions, $options);
 
         $this->logger = $repository->getLogger();
 
@@ -71,33 +64,20 @@ class Branch
     }
 
     /**
-     * @return Repository
-     */
-    public function getParent()
-    {
-        return $this->repository;
-    }
-
-    /**
      * @param string|array $command command for a run
-     * @param string       $path    path from run the command (if is null the path equal repository path)
      *
      * @return Branch
      */
-    public function addCommand($command, $path = '')
+    public function addCommand($command)
     {
-        if (!$path) {
-            $path = $this->path;
-        }
-
         if (is_array($command)) {
             foreach ($command as $cmd) {
-                $this->addCommand($cmd, $path);
+                $this->addCommand($cmd);
             }
         } else {
-            $this->logger->info('Add branch command ' . $command . ', path: ' . $path);
+            $this->logger->info('Add branch command ' . $command );
 
-            $command = new Command($command, $path, $this->logger);
+            $command = new Command($command, $this->logger);
             $this->commandsList[] = $command;
         }
 
@@ -105,42 +85,22 @@ class Branch
     }
 
     /**
-     * @return array
-     */
-    public function executeCommands()
-    {
-        $this->logger->info('Execute commands for branch ' . $this->name . ' ...');
-
-        $result = array();
-        if (!empty($this->commandsList)) {
-            foreach ($this->commandsList as $command) {
-                $result[] = $command->execute();
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * @return int
-     */
-    public function getCommandsCount()
-    {
-        return count($this->commandsList);
-    }
-
-    /**
-     * @param string $name
+     * @param string $path
      *
      * @return array
      */
-    public function getOptions($name = '')
+    public function executeCommands($path)
     {
-        if ($name) {
-            return (isset($this->options[$name])) ? $this->options[$name] : '';
+        $path = $this->path?$this->path:$path;
+
+        $this->logger->info('Execute commands for branch ' . $this->name . ' ...');
+
+        $result = array();
+        foreach ($this->commandsList as $command) {
+            $result[] = $command->execute($path, $this->options);
         }
 
-        return $this->options;
+        return $result;
     }
 
     /**
@@ -149,5 +109,13 @@ class Branch
     public function getName()
     {
         return $this->name;
+    }
+
+    /**
+     * @return array
+     */
+    public function getOptions()
+    {
+        return $this->options;
     }
 }

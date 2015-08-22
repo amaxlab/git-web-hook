@@ -9,7 +9,6 @@
 namespace AmaxLab\GitWebHook;
 
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Psr\Log\LoggerInterface;
 
@@ -74,7 +73,7 @@ class Event
     /**
      * @var bool
      */
-    protected $isValid = true;
+    protected $valid = true;
 
     /**
      * @var Request
@@ -105,7 +104,7 @@ class Event
 
         if (!$body) {
             $this->logger->error('Event content is null');
-            $this->isValid = false;
+            $this->valid = false;
 
             return;
         }
@@ -116,11 +115,11 @@ class Event
             $json = json_decode($body, true);
         } catch (\Exception $e) {
             $this->logger->error('Exception on decode json text');
-            $this->isValid = false;
+            $this->valid = false;
         }
 
         if (!isset($json['ref'])) {
-            $this->isValid = false;
+            $this->valid = false;
             return;
         }
 
@@ -136,7 +135,7 @@ class Event
     /**
      * @return string
      */
-    public function getBranch()
+    public function getBranchName()
     {
         return $this->branch;
     }
@@ -152,7 +151,7 @@ class Event
     /**
      * @return string
      */
-    public function getRepository()
+    public function getRepositoryName()
     {
         return $this->repository;
     }
@@ -184,9 +183,9 @@ class Event
     /**
      * @return boolean
      */
-    public function isIsValid()
+    public function isValid()
     {
-        return $this->isValid;
+        return $this->valid;
     }
 
     /**

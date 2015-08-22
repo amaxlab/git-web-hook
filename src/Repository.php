@@ -9,7 +9,6 @@
 namespace AmaxLab\GitWebHook;
 
 use Psr\Log\NullLogger;
-use Symfony\Component\OptionsResolver\OptionsResolver;
 use Psr\Log\LoggerInterface;
 
 
@@ -55,7 +54,7 @@ class Repository
      * @param string          $name           Name on the repository
      * @param string          $path           Path to execute commands
      * @param array           $options        Options related to current repository
-     * @param array           $defaultOptions Default options passed from hook options
+     * @param array           $defaultOptions Default options passed from hook
      * @param LoggerInterface $logger         Logger
      */
     public function __construct($name, $path, array $options = array(), array $defaultOptions = array(), LoggerInterface $logger)
@@ -64,65 +63,59 @@ class Repository
         $this->name = $name;
         $this->logger = $logger?$logger:new NullLogger();
 
-        $resolver = new OptionsResolver();
-        $resolver->setDefaults($defaultOptions);
-        $this->options = $resolver->resolve($options);
+        $this->options = array_merge($defaultOptions, $options);;
 
         $this->logger->debug('Create repository with params ' . json_encode($this->options));
     }
 
     /**
      * @param string $name
+     * @param array  $commands
      * @param string $path
      * @param array  $options
      *
-     * @return Branch
+     * @return $this
      */
-    public function addBranch($name, $path = '', array $options = array())
+    public function addBranch($name, array $commands, $path = null, array $options = array())
     {
-        if (!$path) {
-            $path = $this->path;
-        }
+        $path = $path?$path:$this->path;
 
-        if (!isset($this->branchesList[$name])) {
+        if (!array_key_exists($name, $this->branchesList)) {
             $this->logger->info('Add branch ' . $name . ', path: ' . $path);
 
-            $this->branchesList[$name] = new Branch($this, $name, $path, $options);
+            $branch = new Branch($this, $name, $path, $options, $this->options);
+            $branch->addCommand($commands);
+            $this->branchesList[$name] = $branch;
         }
 
-        return $this->branchesList[$name];
+        return $this;
     }
 
     /**
      * @param string $name
      *
-     * @return bool|Branch
+     * @return Branch
      */
     public function getBranch($name)
     {
-        return isset($this->branchesList[$name]) ? $this->branchesList[$name] : false;
+        return array_key_exists($name, $this->branchesList) ? $this->branchesList[$name] : null;
     }
 
     /**
      * @param string|array $command command for a run
-     * @param string       $path    path from run the command
      *
      * @return Repository
      */
-    public function addCommand($command, $path = '')
+    public function addCommand($command)
     {
-        if (!$path) {
-            $path = $this->path;
-        }
-
         if (is_array($command)) {
             foreach ($command as $cmd) {
-                $this->addCommand($cmd, $path);
+                $this->addCommand($cmd);
             }
         } else {
-            $this->logger->info('Add to repository command: ' . $command . ', path: ' . $path);
+            $this->logger->info('Add to repository command: ' . $command);
 
-            $command = new Command($command, $path, $this->logger);
+            $command = new Command($command, $this->logger);
             $this->commandsList[] = $command;
         }
 
@@ -130,40 +123,29 @@ class Repository
     }
 
     /**
+     * @param string $path
+     *
      * @return array
      */
-    public function executeCommands()
+    public function executeCommands($path)
     {
+        $path = $this->path?$this->path:$path;
+
         $this->logger->info('Execute commands for repository ' . $this->name . ' ...');
         $result = array();
-        if (!empty($this->commandsList)) {
-            foreach ($this->commandsList as $command) {
-                $result[] = $command->execute();
-            }
+
+        foreach ($this->commandsList as $command) {
+            $result[] = $command->execute($path, $this->options);
         }
 
         return $result;
     }
 
     /**
-     * @return int
-     */
-    public function getCommandsCount()
-    {
-        return count($this->commandsList);
-    }
-
-    /**
-     * @param string $name
-     *
      * @return array
      */
-    public function getOptions($name = '')
+    public function getOptions()
     {
-        if ($name) {
-            return (isset($this->options[$name])) ? $this->options[$name] : '';
-        }
-
         return $this->options;
     }
 

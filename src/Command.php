@@ -23,57 +23,41 @@ class Command
     protected $command;
 
     /**
-     * @var string
-     */
-    protected $path;
-
-    /**
      * @var LoggerInterface
      */
     protected $logger;
 
     /**
      * @param string          $command command for execution
-     * @param string          $path    path from execute command
      * @param LoggerInterface $logger  logger
      */
-    public function __construct($command, $path, LoggerInterface $logger)
+    public function __construct($command, LoggerInterface $logger)
     {
         $this->command = $command;
-        $this->path    = $path;
         $this->logger  = $logger;
     }
 
     /**
+     * @param string $path
+     * @param array  $options
+     *
      * @return array
      */
-    public function execute()
+    public function execute($path, array $options)
     {
-        if (!chdir($this->path)) {
-            $this->logger->error('Cannot change directory to ' . $this->path);
+        if (!chdir($path)) {
+            $this->logger->error('Cannot change directory to ' . $path);
 
             return array('command' => $this->command, 'errorCode' => 1);
         } else {
-            $this->logger->info('Execute command ' . $this->command . ' from ' . $this->path);
+            $this->logger->info('Execute command ' . $this->command . ' from ' . $path);
             exec($this->command, $out, $resultCode);
-
+            $this->logger->info('Exit code =  ' . $resultCode);
             if ($resultCode != 0) {
-                $this->logger->error('Cannot execute command ' . $this->command . ' from ' . $this->path);
+                $this->logger->error('Cannot execute command ' . $this->command . ' from ' . $path);
             }
         }
 
-        return array(
-            'command'   => $this->command,
-            'errorCode' => $resultCode,
-            'output'    => $out,
-        );
-    }
-
-    /**
-     * @return string
-     */
-    public function getCommand()
-    {
-        return $this->command;
+        return new CommandResult($this->command, $out, $resultCode, $options);
     }
 }

@@ -14,17 +14,22 @@ class RepositoryBuilder
     /**
      * @var string
      */
-    private $name;
+    protected $name;
 
     /**
      * @var string
      */
-    private $path;
+    protected $path;
 
     /**
      * @var array
      */
-    private $options;
+    protected $options;
+
+    /**
+     * @var array|string
+     */
+    protected $commands;
 
     /**
      * Constructor
@@ -42,6 +47,10 @@ class RepositoryBuilder
     public function build(Hook $hook)
     {
         $repository = new Repository($this->getName(), $this->getPath(), $this->getOptions(), $hook->getOptions(), $hook->getLogger());
+
+        if ($this->commands) {
+            $repository->addCommand($this->commands);
+        }
 
         return $repository;
     }
@@ -115,6 +124,26 @@ class RepositoryBuilder
     public function addOption($key, $value)
     {
         $this->options[$key] = $value;
+
+        return $this;
+    }
+
+    /**
+     * @return array|string
+     */
+    public function getCommands()
+    {
+        return $this->commands;
+    }
+
+    /**
+     * @param array|string $commands
+     *
+     * @return RepositoryBuilder;
+     */
+    public function setCommands($commands)
+    {
+        $this->commands = $commands;
 
         return $this;
     }

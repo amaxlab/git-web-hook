@@ -14,9 +14,17 @@ use Monolog\Logger;
 use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 use Symfony\Component\Filesystem\Filesystem;
 
+/**
+ * Class HookTest
+ *
+ * @package AmaxLab\GitWebHook\Tests
+ */
 class HookTest extends GWHTestCase
 {
 
+    /**
+     * Testing execution
+     */
     public function testExecute()
     {
         $repoUrl = 'git@github.com:amaxlab/git-web-hook-test.git';
@@ -81,6 +89,9 @@ class HookTest extends GWHTestCase
         $this->assertEmpty($content, sprintf('Log file is not empty: %s', $content));
     }
 
+    /**
+     * Test loading of repository configurations
+     */
     public function testLoadRepos()
     {
         $options = array(
@@ -112,7 +123,7 @@ class HookTest extends GWHTestCase
         $count = $hook->loadRepos($testFile1);
         $this->assertEquals(0, $count, 'Wrong number of loaded repositories');
 
-        for ($i = 1; $i <=3; $i++) {
+        for ($i = 1; $i <= 3; $i++) {
             $this->generateBuilderFile($testFile1, $i);
             $count = $hook->loadRepos($reposDir);
             $this->assertEquals($i, $count, sprintf('Wrong number of loaded repositories, found %s, expected %s', $count, $i));

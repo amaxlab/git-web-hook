@@ -11,7 +11,6 @@ namespace AmaxLab\GitWebHook;
 use Psr\Log\NullLogger;
 use Psr\Log\LoggerInterface;
 
-
 /**
  * Class Repository
  *
@@ -57,15 +56,15 @@ class Repository
      * @param array           $defaultOptions Default options passed from hook
      * @param LoggerInterface $logger         Logger
      */
-    public function __construct($name, $path, array $options = array(), array $defaultOptions = array(), LoggerInterface $logger)
+    public function __construct($name, $path, array $options = array(), array $defaultOptions = array(), LoggerInterface $logger = null)
     {
         $this->path = $path;
         $this->name = $name;
         $this->logger = $logger?$logger:new NullLogger();
 
-        $this->options = array_merge($defaultOptions, $options);;
+        $this->options = array_merge($defaultOptions, $options);
 
-        $this->logger->debug('Create repository with params ' . json_encode($this->options));
+        $this->logger->debug('Create repository with params '.json_encode($this->options));
     }
 
     /**
@@ -81,7 +80,7 @@ class Repository
         $path = $path?$path:$this->path;
 
         if (!array_key_exists($name, $this->branchesList)) {
-            $this->logger->info('Add branch ' . $name . ', path: ' . $path);
+            $this->logger->info('Add branch '.$name.', path: '.$path);
 
             $branch = new Branch($this, $name, $path, $options, $this->options);
             $branch->addCommand($commands);
@@ -113,7 +112,7 @@ class Repository
                 $this->addCommand($cmd);
             }
         } else {
-            $this->logger->info('Add to repository command: ' . $command);
+            $this->logger->info('Add to repository command: '.$command);
 
             $command = new Command($command, $this->logger);
             $this->commandsList[] = $command;
@@ -131,7 +130,7 @@ class Repository
     {
         $path = $this->path?$this->path:$path;
 
-        $this->logger->info('Execute commands for repository ' . $this->name . ' ...');
+        $this->logger->info('Execute commands for repository '.$this->name.' ...');
         $result = array();
 
         foreach ($this->commandsList as $command) {

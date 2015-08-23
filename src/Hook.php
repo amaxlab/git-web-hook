@@ -56,10 +56,10 @@ class Hook
     /**
      * Constructor
      *
-     * @param string          $path     global path
-     * @param array           $options  hook options
-     * @param LoggerInterface $logger   logger
-     * @param Request         $request  Symfony request object
+     * @param string          $path    global path
+     * @param array           $options hook options
+     * @param LoggerInterface $logger  logger
+     * @param Request         $request Symfony request object
      */
     public function __construct($path = null, array $options = array(), LoggerInterface $logger = null, Request $request = null)
     {
@@ -68,7 +68,7 @@ class Hook
         $this->logger  = $logger?$logger:new NullLogger();
         $this->options = $this->validateOptions($options);
 
-        $this->logger->debug('Create hook with params ' . json_encode($this->options));
+        $this->logger->debug('Create hook with params '.json_encode($this->options));
     }
 
     /**
@@ -156,7 +156,7 @@ class Hook
                 $this->addCommand($cmd);
             }
         } else {
-            $this->logger->info('Add hook command ' . $command);
+            $this->logger->info('Add hook command '.$command);
 
             $command = new Command($command, $this->logger);
             $this->commandsList[] = $command;
@@ -177,7 +177,7 @@ class Hook
         $commandsResult = array();
 
         if (!$event->isValid()) {
-            $this->logger->error('Found not valid event from ' . $event->getHost());
+            $this->logger->error('Found not valid event from '.$event->getHost());
             $this->return404();
 
             return;
@@ -188,8 +188,8 @@ class Hook
         }
 
         $repository = $this->getRepository($event->getRepositoryName());
-        if (!$repository || !($branch = $repository->getBranch($event->getBranchName())) ) {
-            $this->logger->warning('Repository: ' . $event->getRepositoryName() . ' and branch: ' . $event->getBranchName() . ' not found in the settings');
+        if (!$repository || !($branch = $repository->getBranch($event->getBranchName()))) {
+            $this->logger->warning('Repository: '.$event->getRepositoryName().' and branch: '.$event->getBranchName().' not found in the settings');
             $this->return404();
 
             return;
@@ -221,11 +221,11 @@ class Hook
     private function checkAllow($where, $that)
     {
         if (is_array($where)) {
-            $this->logger->info('Checking permissions ' . $that . ', in: ' . var_export($where, true));
+            $this->logger->info('Checking permissions '.$that.', in: '.var_export($where, true));
 
             return  in_array($that, $where) ? true : false;
         } elseif ($where == '*' || (trim($where) == trim($that))) {
-            $this->logger->info('Checking permissions ' . $that . ', in: ' . $where);
+            $this->logger->info('Checking permissions '.$that.', in: '.$where);
 
             return true;
         } else {
@@ -257,19 +257,19 @@ class Hook
         $host = $options['allowedHosts'];
         if ($securityCode && $securityCode != $event->getSecurityCode()) {
             $this->logger->warning('Security code not match');
-            $this->logger->debug('Config: '.$securityCode . ' != $_GET:' . $event->getSecurityCode());
+            $this->logger->debug('Config: '.$securityCode.' != $_GET:'.$event->getSecurityCode());
 
             return false;
         }
 
         if (!$this->checkAllow($host, $event->getHost())) {
-            $this->logger->warning('Host ' . $event->getHost() . ' not allowed on this branch');
+            $this->logger->warning('Host '.$event->getHost().' not allowed on this branch');
 
             return false;
         }
 
         if (!$this->checkAllow($author, $event->getAuthor())) {
-            $this->logger->warning('Author ' . $event->getAuthor() . ' not allowed on this branch');
+            $this->logger->warning('Author '.$event->getAuthor().' not allowed on this branch');
 
             return false;
         }
@@ -288,23 +288,23 @@ class Hook
         $headers = array(
             'MIME-Version: 1.0',
             'Content-type: text/html; charset=utf-8',
-            'From: ' . $from,
+            'From: '.$from,
         );
 
-        $subject = $event->getRepositoryName() . '('.$event->getBranchName().')';
+        $subject = $event->getRepositoryName().'('.$event->getBranchName().')';
         $hr = '<tr><td colspan="2"><hr></td></tr>';
         $message = '<html><head><title>'.$subject.'</title></head><body><table>'
-                  .'<tr><td><b>Author</b></td><td>' . $event->getAuthorFull() . '</td></tr>'
-                  .'<tr><td><b>Message</b></td><td>' . $event->getMessage() . '</td></tr>'
-                  .'<tr><td><b>Timestamp</b></td><td>' . $event->getTimestamp() . '</td></tr>'.$hr;
+                  .'<tr><td><b>Author</b></td><td>'.$event->getAuthorFull().'</td></tr>'
+                  .'<tr><td><b>Message</b></td><td>'.$event->getMessage().'</td></tr>'
+                  .'<tr><td><b>Timestamp</b></td><td>'.$event->getTimestamp().'</td></tr>'.$hr;
 
 
         foreach ($resultCommands as $result) {
             $color =  ($result->getResultCode() == 0) ? 'green' : 'red';
-            $message .= '<tr><td style="color: ' . $color . '" colspan="2"><b>Result of command ' . $result->getCommand() . ':</b></td></tr>';
+            $message .= '<tr><td style="color: '.$color.'" colspan="2"><b>Result of command '.$result->getCommand().':</b></td></tr>';
 
             foreach ($result->getOutput() as $line) {
-                $message .= '<tr><td colspan="2">' . $line . '</td></tr>';
+                $message .= '<tr><td colspan="2">'.$line.'</td></tr>';
             }
 
             $message .= $hr;
@@ -312,8 +312,8 @@ class Hook
 
         $message .= '</table></body></html>';
 
-        $this->logger->info('Send email to ' . $to . ' subject ' . $subject);
-        $this->logger->debug('Text of email: ' . $message);
+        $this->logger->info('Send email to '.$to.' subject '.$subject);
+        $this->logger->debug('Text of email: '.$message);
 
         if (!mail($to, $subject, $message, implode($headers, "\r\n"))) {
             $this->logger->error('Cannot send email to '.$to);
@@ -329,7 +329,6 @@ class Hook
         $mailParts = array();
         foreach ($results as $key => $resultCommands) {
             foreach ($resultCommands as $resultCommand) {
-
                 $options = $resultCommand->getOptions();
 
                 if (!$options['sendEmails']) {

@@ -8,7 +8,11 @@
 
 namespace AmaxLab\GitWebHook;
 
-
+/**
+ * Class CommandResult
+ *
+ * @package AmaxLab\GitWebHook
+ */
 class CommandResult
 {
 
@@ -33,6 +37,12 @@ class CommandResult
     protected $options;
 
 
+    /**
+     * @param string $command
+     * @param array  $output
+     * @param int    $resultCode
+     * @param array  $options
+     */
     public function __construct($command, array $output, $resultCode, array $options)
     {
         $this->command = $command;

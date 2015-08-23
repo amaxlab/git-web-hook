@@ -12,7 +12,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Psr\Log\LoggerInterface;
 
-
 /**
  * Class Event
  *
@@ -92,8 +91,8 @@ class Event
         $this->options = $this->configureOptions($options);
 
         $this->request = $request;
-        $this->logger->debug('Create call with params ' . json_encode($this->options));
-        $this->logger->debug('Request server values: ' . json_encode($this->request->server));
+        $this->logger->debug('Create call with params '.json_encode($this->options));
+        $this->logger->debug('Request server values: '.json_encode($this->request->server));
 
         $this->host = $this->request->getClientIp();
         $queryBag = $this->request->query;
@@ -108,7 +107,7 @@ class Event
             return;
         }
 
-        $this->logger->debug('Event content: ' . $body);
+        $this->logger->debug('Event content: '.$body);
 
         try {
             $json = json_decode($body, true);
@@ -119,6 +118,7 @@ class Event
 
         if (!isset($json['ref'])) {
             $this->valid = false;
+
             return;
         }
 
@@ -168,7 +168,7 @@ class Event
      */
     public function getAuthorFull()
     {
-        return $this->authorName . '<' . $this->author . '>';
+        return $this->authorName.'<'.$this->author.'>';
     }
 
     /**

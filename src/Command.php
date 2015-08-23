@@ -46,15 +46,15 @@ class Command
     public function execute($path, array $options)
     {
         if (!chdir($path)) {
-            $this->logger->error('Cannot change directory to ' . $path);
+            $this->logger->error('Cannot change directory to '.$path);
 
             return array('command' => $this->command, 'errorCode' => 1);
         } else {
-            $this->logger->info('Execute command ' . $this->command . ' from ' . $path);
+            $this->logger->info('Execute command '.$this->command.' from '.$path);
             exec($this->command, $out, $resultCode);
-            $this->logger->info('Exit code =  ' . $resultCode);
+            $this->logger->info('Exit code =  '.$resultCode);
             if ($resultCode != 0) {
-                $this->logger->error('Cannot execute command ' . $this->command . ' from ' . $path);
+                $this->logger->error('Cannot execute command '.$this->command.' from '.$path);
             }
         }
 

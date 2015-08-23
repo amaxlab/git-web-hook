@@ -10,7 +10,6 @@ namespace AmaxLab\GitWebHook;
 
 use Psr\Log\LoggerInterface;
 
-
 /**
  * Class Branch
  *
@@ -51,7 +50,7 @@ class Branch
      * @param array      $options        options
      * @param array      $defaultOptions Options passed from repository
      */
-    public function __construct(Repository $repository, $name, $path, array $options = array(), array $defaultOptions)
+    public function __construct(Repository $repository, $name, $path, array $options = array(), array $defaultOptions = array())
     {
         $this->path = $path;
         $this->name = $name;
@@ -60,7 +59,7 @@ class Branch
 
         $this->logger = $repository->getLogger();
 
-        $this->logger->debug('Create branch with params ' . json_encode($this->options));
+        $this->logger->debug('Create branch with params '.json_encode($this->options));
     }
 
     /**
@@ -75,7 +74,7 @@ class Branch
                 $this->addCommand($cmd);
             }
         } else {
-            $this->logger->info('Add branch command ' . $command );
+            $this->logger->info('Add branch command '.$command);
 
             $command = new Command($command, $this->logger);
             $this->commandsList[] = $command;
@@ -93,7 +92,7 @@ class Branch
     {
         $path = $this->path?$this->path:$path;
 
-        $this->logger->info('Execute commands for branch ' . $this->name . ' ...');
+        $this->logger->info('Execute commands for branch '.$this->name.' ...');
 
         $result = array();
         foreach ($this->commandsList as $command) {

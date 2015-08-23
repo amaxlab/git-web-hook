@@ -75,6 +75,26 @@ class GWHTestCase extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * @param string $dirName
+     * @param string $fileName
+     *
+     * @return string
+     */
+    public function makeFile($dirName, $fileName)
+    {
+        $path = $dirName.DIRECTORY_SEPARATOR.$fileName;
+        $this->markDirToBeRemoved($path);
+
+        try {
+            $this->fs->touch($path);
+        } catch (IOExceptionInterface $e) {
+            $this->fail(sprintf('Can\'t create file %s', $path));
+        }
+
+        return $path;
+    }
+
+    /**
      * Mark directory to be removed
      *
      * @param string|array $dir

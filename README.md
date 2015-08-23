@@ -35,6 +35,10 @@ $ php composer create-project amaxlab/git-web-hook-composer-install ./git-web-ho
 
 Usage
 -----
+
+### Old way:
+Specify config in php file directly:
+
 ```php
 <?php
 
@@ -65,10 +69,27 @@ You can also specify some commands to execute them on hook call:
 $hook->addCommand($someCommand);
 ```
 
+### Preferred way:
+
+Load config from yaml file
+```php
+<?php
+
+include __DIR__.'/../vendor/autoload.php';
+
+use AmaxLab\GitWebHook\Hook;
+
+$hook = new Hook(__DIR__);
+$hook->loadConfig('/var/www/ghw/config.yml');
+$hook->execute();
+```
+
+
 Configuration
 -------------
 
-Configuration can be unique for each branch, it is enough to pass the variable options of type array. See example below.
+Configuration can be unique for each branch, it is enough to pass the variable options of type array. You can pass them directly while creating hook or load through main config.yml file. You should use yaml files, due to configuration through php will be removed in future releases.
+See examples below.
 
 ```php
 $options = array(
@@ -82,6 +103,40 @@ $options = array(
     'securityCodeFieldName' => 'code',                         // $_GET field name of security code
     'repositoryFieldName'   => 'url',                          // Repository filed name on the JSON query
 );
+```
+
+```yaml
+    #/var/www/ghw/config.yml
+    options:
+        sendEmails: false,                       # Enable or disable sending emails
+        sendEmailAuthor: false,                  # Enable or disable sending email commit author
+        sendEmailFrom: 'git-web-hook@youdomain', # Email address from which messages are sent
+        mailRecipients: [],                      # Array of subscribers
+        allowedAuthors: [],                      # Array of commit authors allowed to execute commands
+        allowedHosts: [],                        # Array of hook hosts allowed to execute commands
+        securityCode: '',                        # Security code on check $_GET request
+        securityCodeFieldName: 'code',           # $_GET field name of security code
+        repositoryFieldName: 'url',              # Repository filed name on the JSON query
+    commands: [] #commands to execute on each hook call
+    path: '/var/www/projects' #main path where commands will be executed, can be overwrite in repository or branch
+    repositoriesDir: /var/www/ghw/repos.d/ #directory to load additional yaml files with repository configuraton
+    #repositories: # you can specify some repository directly in main config file
+    #    git@github.com:amaxlab/git-web-hook-test.git:
+    #        path: null
+    #        options: {}
+    #        commands: 
+    #          - git status
+    #        branch:
+    #            master:
+    #                path: null
+    #                options: {}
+    #                commands: 
+    #                  - git reset --hard HEAD
+    #                  - git pull origin master
+    #            production:
+    #                commands: 
+    #                  - git reset --hard HEAD
+    #                  - git pull origin production
 ```
 
 Logging
@@ -114,14 +169,15 @@ If you have a lot of repositories you can place them in separate *.yml files and
 <?php
 
 $hook = new Hook(__DIR__, $options);
-$hook->loadRepos('/path/to/derectory/');
+$hook->loadRepos('/path/to/derectory/'); // or $hook->loadConfig('/path/to/file); if you specify `repositoriesDir` in main config.yml
 $hook->execute();
 ```
 
-Example of configuration file:
+Example of partial configuration file:
 ```yml
 
 repositories:
+    #one or several repositories can be described in a file
     git@github.com:amaxlab/git-web-hook-test.git:
         path: null
         options: {}
@@ -154,6 +210,13 @@ $options = array(
 );
 ```
 
+```yaml
+options:
+    securityCode: 'GjnfkrjdsqKfvgjcjc',
+    securityCodeFieldName: 'mySecurityCode',
+);
+```
+
 and setup web hook on gitlab.com or github.com on 
 ```
 http://yourhost/hook.php?mySecurityCode=GjnfkrjdsqKfvgjcjc
@@ -169,7 +232,6 @@ TODO
 ----
 
 * Add configuration for trusted proxies
-* Add possibility of defining full configuration (not only repositories) thought yaml files.
 * Add possibility of defining array of securityCodes
 
 License

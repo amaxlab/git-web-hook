@@ -88,6 +88,46 @@ class Hook
     }
 
     /**
+     * @param string $configFile path to main configuration file
+     */
+    public function loadConfig($configFile)
+    {
+        $yaml = new Parser();
+        try {
+            $config = $yaml->parse(file_get_contents($configFile));
+        } catch (ParseException $e) {
+            $this->logger->error(sprintf('Unable to parse the YAML string: %s in %s', $e->getMessage(), $e->getParsedFile()));
+
+            return;
+        }
+        if (!is_array($config)) {
+            $this->logger->error('Parsed config file is not an array');
+
+            return;
+        }
+
+        $config = $this->resolveMainConfig($config);
+        //global hook options
+        if (array_key_exists('options', $config)) {
+            $options = $config['options'];
+            $this->options = $this->validateOptions($options);
+        }
+
+        // global hook commands
+        if (array_key_exists('commands', $config)) {
+            $this->addCommand($config['commands']);
+        }
+
+        if (array_key_exists('path', $config)) {
+            $this->path = $config['path'];
+        }
+
+        if (array_key_exists('repositories', $config)) {
+            $this->handleRepositoryConfig($config);
+        }
+    }
+
+    /**
      * @param string $dir
      *
      * @return int Count of loaded repositories
@@ -95,25 +135,19 @@ class Hook
     public function loadRepos($dir)
     {
 
-        $files = glob($dir.'*.yml');
+        $files = glob($dir.DIRECTORY_SEPARATOR.'*.yml');
         $count = 0;
 
         foreach ($files as $file) {
             $yaml = new Parser();
             try {
-                $value = $yaml->parse(file_get_contents($file));
+                $config = $yaml->parse(file_get_contents($file));
             } catch (ParseException $e) {
                 $this->logger->error(sprintf('Unable to parse the YAML string: %s in %s', $e->getMessage(), $e->getParsedFile()));
                 continue;
             }
 
-            if (is_array($value) && array_key_exists('repositories', $value)) {
-                foreach ($value['repositories'] as $repoName => $repoConf) {
-                    $this->addRepository($repoName, $repoConf['path'], $repoConf['options'], $repoConf['commands']);
-                    $count++;
-                }
-            }
-
+            $count += $this->handleRepositoryConfig($config);
         }
 
         return $count;
@@ -211,6 +245,15 @@ class Hook
         $this->logger->info('End of web hook handle');
     }
 
+    /**
+     * @param string $name
+     *
+     * @return Repository|null
+     */
+    public function getRepository($name)
+    {
+        return array_key_exists($name, $this->repositoryList) ? $this->repositoryList[$name] : null;
+    }
 
     /**
      * @param string|array $where
@@ -231,17 +274,6 @@ class Hook
         } else {
             return false;
         }
-    }
-
-
-    /**
-     * @param string $name
-     *
-     * @return Repository|null
-     */
-    private function getRepository($name)
-    {
-        return array_key_exists($name, $this->repositoryList) ? $this->repositoryList[$name] : null;
     }
 
     /**
@@ -363,6 +395,28 @@ class Hook
     }
 
     /**
+     * @return Event
+     */
+    private function createEvent()
+    {
+        return new Event($this->logger, $this->request, array(
+            'securityCodeFieldName' => $this->options['securityCodeFieldName'],
+            'repositoryFieldName'   => $this->options['repositoryFieldName'],
+        ));
+    }
+
+    /**
+     * Return 404 error
+     */
+    private function return404()
+    {
+        $this->logger->warning('Returning 404 error');
+        $response = new Response(null, 404);
+        $response->send();
+    }
+
+
+    /**
      * @param array $options
      *
      * @return array
@@ -386,23 +440,103 @@ class Hook
     }
 
     /**
-     * @return Event
+     * @param array $config
+     *
+     * @return int
      */
-    private function createEvent()
+    private function handleRepositoryConfig($config)
     {
-        return new Event($this->logger, $this->request, array(
-            'securityCodeFieldName' => $this->options['securityCodeFieldName'],
-            'repositoryFieldName'   => $this->options['repositoryFieldName'],
-        ));
+        $count = 0;
+        if (is_array($config) && array_key_exists('repositories', $config)) {
+            foreach ($config['repositories'] as $repoName => $repoConf) {
+                $repoConf = $this->resolveRepositoryConfig($repoConf);
+                $repository = $this->addRepository($repoName, $repoConf['path'], $repoConf['options'], $repoConf['commands']);
+                $count++;
+
+                // adding branches
+                if (array_key_exists('branch', $repoConf)) {
+                    foreach ($repoConf['branch'] as $branchName => $branchOptions) {
+                        $branchOptions = $this->resolveBranchConfig($branchOptions);
+                        $repository->addBranch($branchName, $branchOptions['commands'], $branchOptions['path'], $branchOptions['options']);
+                    }
+                }
+            }
+        }
+
+        return $count;
     }
 
     /**
-     * Return 404 error
+     * @param array $mainConfig
+     *
+     * @return array
      */
-    private function return404()
+    private function resolveMainConfig(array $mainConfig)
     {
-        $this->logger->warning('Returning 404 error');
-        $response = new Response(null, 404);
-        $response->send();
+        $resolver = new OptionsResolver();
+        $resolver
+            ->setDefaults(array(
+                'path' => null,
+                'commands' => array(),
+                'options' => array(),
+            ))
+            ->setDefined(array(
+                'repositoriesDir',
+                'repositories',
+            ))
+            ->setAllowedTypes('repositoriesDir', 'string')
+            ->setAllowedTypes('commands', 'array')
+            ->setAllowedTypes('options', 'array')
+            ->setAllowedTypes('repositories', 'array')
+            ->setAllowedTypes('path', array('string', 'null'))
+        ;
+
+        return $resolver->resolve($mainConfig);
+    }
+
+    /**
+     * @param array $repositoryConfig
+     *
+     * @return array
+     */
+    private function resolveRepositoryConfig(array $repositoryConfig)
+    {
+        $resolver = new OptionsResolver();
+        $resolver
+            ->setDefaults(array(
+                'path' => null,
+                'commands' => array(),
+                'options' => array(),
+                'branch' => array(),
+            ))
+            ->setAllowedTypes('commands', 'array')
+            ->setAllowedTypes('options', 'array')
+            ->setAllowedTypes('branch', 'array')
+            ->setAllowedTypes('path', array('string', 'null'))
+        ;
+
+        return $resolver->resolve($repositoryConfig);
+    }
+
+    /**
+     * @param array $branchConfig
+     *
+     * @return array
+     */
+    private function resolveBranchConfig(array $branchConfig)
+    {
+        $resolver = new OptionsResolver();
+        $resolver
+            ->setDefaults(array(
+                'path' => null,
+                'commands' => array(),
+                'options' => array(),
+            ))
+            ->setAllowedTypes('commands', 'array')
+            ->setAllowedTypes('options', 'array')
+            ->setAllowedTypes('path', array('string', 'null'))
+        ;
+
+        return $resolver->resolve($branchConfig);
     }
 }

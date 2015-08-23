@@ -292,25 +292,14 @@ class Hook
         );
 
         $subject = $event->getRepositoryName().'('.$event->getBranchName().')';
-        $hr = '<tr><td colspan="2"><hr></td></tr>';
-        $message = '<html><head><title>'.$subject.'</title></head><body><table>'
-                  .'<tr><td><b>Author</b></td><td>'.$event->getAuthorFull().'</td></tr>'
-                  .'<tr><td><b>Message</b></td><td>'.$event->getMessage().'</td></tr>'
-                  .'<tr><td><b>Timestamp</b></td><td>'.$event->getTimestamp().'</td></tr>'.$hr;
 
+        $template = new Template(__DIR__.'/templates/', $this->logger);
 
-        foreach ($resultCommands as $result) {
-            $color =  ($result->getResultCode() == 0) ? 'green' : 'red';
-            $message .= '<tr><td style="color: '.$color.'" colspan="2"><b>Result of command '.$result->getCommand().':</b></td></tr>';
-
-            foreach ($result->getOutput() as $line) {
-                $message .= '<tr><td colspan="2">'.$line.'</td></tr>';
-            }
-
-            $message .= $hr;
-        }
-
-        $message .= '</table></body></html>';
+        $message = $template->render('mail.php', array(
+            'subject' => $subject,
+            'event' => $event,
+            'resultCommands' => $resultCommands,
+        ));
 
         $this->logger->info('Send email to '.$to.' subject '.$subject);
         $this->logger->debug('Text of email: '.$message);

@@ -11,6 +11,7 @@ namespace AmaxLab\GitWebHook\Tests;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
@@ -27,9 +28,56 @@ class GWHTestCase extends \PHPUnit_Framework_TestCase
     protected $dirsToRemove;
 
     /**
+     * @var Filesystem
+     */
+    protected $fs;
+
+    /**
+     * @var string
+     */
+    protected $baseTempDir;
+
+    protected function setUp()
+    {
+        parent::setUp();
+
+        $this->fs = new Filesystem();
+        $this->baseTempDir  = sys_get_temp_dir().'/test_GWH/';
+        try {
+            $this->fs->remove($this->baseTempDir);
+        } catch (IOExceptionInterface $e) {
+        }
+        try {
+            $this->fs->mkdir($this->baseTempDir);
+        } catch (IOExceptionInterface $e) {
+            $this->fail(sprintf('Can\'t create directory %s', $this->baseTempDir));
+        }
+    }
+
+
+    /**
+     * @param string $dirName
+     *
+     * @return string
+     */
+    public function makeTempDir($dirName)
+    {
+        $dir = $this->baseTempDir.$dirName;
+        $this->markDirToBeRemoved($dir);
+
+        try {
+            $this->fs->mkdir($dir);
+        } catch (IOExceptionInterface $e) {
+            $this->fail(sprintf('Can\'t create directory %s', $dir));
+        }
+
+        return $dir;
+    }
+
+    /**
      * Mark directory to be removed
      *
-     * @param string $dir
+     * @param string|array $dir
      */
     public function markDirToBeRemoved($dir)
     {

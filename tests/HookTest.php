@@ -38,27 +38,12 @@ class HookTest extends GWHTestCase
             'allowedHosts'        => '*',
         );
 
-        $tempDir  = sys_get_temp_dir().'/test_GWH/';
-        $repoDir = $tempDir.'repo/';
-        $logFile = $tempDir.'hook.log';
-        $this->markDirToBeRemoved($repoDir);
-        $this->markDirToBeRemoved($tempDir);
 
-        $fs = new Filesystem();
+        $repoDir = $this->makeTempDir('repo');
+        $logFile = $this->baseTempDir.'/hook.log';
 
         try {
-            $fs->remove($tempDir);
-        } catch (IOExceptionInterface $e) {
-        }
-
-        try {
-            $fs->mkdir($repoDir);
-        } catch (IOExceptionInterface $e) {
-            $this->fail(sprintf('Can\'t create directory %s', $repoDir));
-        }
-
-        try {
-            $fs->touch($logFile);
+            $this->fs->touch($logFile);
         } catch (IOExceptionInterface $e) {
             $this->fail('Can\'t create logfile');
         }

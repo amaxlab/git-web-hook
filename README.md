@@ -232,6 +232,11 @@ Jan 01 00:00:00 WARN Security code not match
 ```
 in the log file
 
+TODO
+----
+
+* Remove old way of configuration (through php file)
+* Resolve passing config while loading config and remove unnessesary dependencies between classes hook/repository/branch/command
 
 License
 --------

@@ -119,6 +119,7 @@ $options = array(
         repositoryFieldName: 'url',              # Repository filed name on the JSON query
     commands: [] #commands to execute on each hook call
     path: '/var/www/projects' #main path where commands will be executed, can be overwrite in repository or branch
+    #trustedProxies: [192.168.0.100] # if your projects lives behind proxy you should specify it ip, to correctly determine real ip address
     repositoriesDir: /var/www/ghw/repos.d/ #directory to load additional yaml files with repository configuraton
     #repositories: # you can specify some repository directly in main config file
     #    git@github.com:amaxlab/git-web-hook-test.git:
@@ -200,6 +201,9 @@ repositories:
 Security code checking configuration
 ------------------------------------
 
+
+Security code can be cofigured only on the root options.
+
 Setup config:
 ```php
 $options = array(
@@ -228,10 +232,6 @@ Jan 01 00:00:00 WARN Security code not match
 ```
 in the log file
 
-TODO
-----
-
-* Add configuration for trusted proxies
 
 License
 --------

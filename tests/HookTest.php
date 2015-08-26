@@ -12,6 +12,7 @@ use AmaxLab\GitWebHook\Hook;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Class HookTest
@@ -22,7 +23,7 @@ class HookTest extends GWHTestCase
 {
 
     /**
-     * Testing execution
+     * Execution test
      */
     public function testExecute()
     {
@@ -66,6 +67,9 @@ class HookTest extends GWHTestCase
         $this->assertEmpty($content, sprintf('Log file is not empty: %s', $content));
     }
 
+    /**
+     * Load config test
+     */
     public function testLoadConfig()
     {
         $logFile = $this->makeFile($this->baseTempDir, 'hook.log');
@@ -85,6 +89,7 @@ class HookTest extends GWHTestCase
     sendEmailAuthor: false
     allowedAuthors: \'*\'
     allowedHosts: \'*\'
+trustedProxies: [192.168.0.2, 192.168.0.3]
 repositoriesDir: '.$reposDir.'
 repositories:
     git@github.com:amaxlab/git-web-hook-test.git:
@@ -120,6 +125,10 @@ repositories:
         $this->assertInstanceOf('AmaxLab\GitWebHook\Branch', $productionBranch, 'There is not a branch master');
 
         $this->assertContains('test@test.test', $masterBranch->getOptions()['mailRecipients']);
+
+        $this->assertContains('192.168.0.2', Request::getTrustedProxies(), 'There is error in configuring trusted proxies');
+        $this->assertContains('192.168.0.3', Request::getTrustedProxies(), 'There is error in configuring trusted proxies');
+        $this->assertNotContains('192.168.0.4', Request::getTrustedProxies(), 'There is error in configuring trusted proxies');
 
         $content = file_get_contents($logFile);
         $this->assertEmpty($content, sprintf('Log file is not empty: %s', $content));
@@ -158,6 +167,8 @@ repositories:
     }
 
     /**
+     * Generates some configurations files for testing purposes
+     *
      * @param string $file
      * @param int    $countOfBuilders
      */

@@ -107,6 +107,11 @@ class Hook
         }
 
         $config = $this->resolveMainConfig($config);
+
+        if (array_key_exists('trustedProxies', $config)) {
+            Request::setTrustedProxies($config['trustedProxies']);
+        }
+
         //global hook options
         if (array_key_exists('options', $config)) {
             $options = $config['options'];
@@ -475,9 +480,11 @@ class Hook
                 'options' => array(),
             ))
             ->setDefined(array(
+                'trustedProxies',
                 'repositoriesDir',
                 'repositories',
             ))
+            ->setAllowedTypes('trustedProxies', 'array')
             ->setAllowedTypes('repositoriesDir', 'string')
             ->setAllowedTypes('commands', 'array')
             ->setAllowedTypes('options', 'array')

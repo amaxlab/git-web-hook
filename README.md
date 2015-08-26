@@ -232,7 +232,6 @@ TODO
 ----
 
 * Add configuration for trusted proxies
-* Add possibility of defining array of securityCodes
 
 License
 --------

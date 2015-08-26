@@ -206,7 +206,7 @@ class Hook
      */
     public function execute(Event $event = null)
     {
-        $event = $event?$event:$this->createEvent();
+        $event = $event ? $event : $this->createEvent();
         $this->logger->info('Starting web hook handle');
         $commandsResult = array();
 
@@ -217,8 +217,8 @@ class Hook
             return;
         }
 
-        if (!empty($this->commandsList) && $this->checkPermissions($event, $this->options)) {
-            $commandsResult['hook'] = $this->executeCommands();
+        if (!$this->checkPermissions($event, $this->options)) {
+            return;
         }
 
         $repository = $this->getRepository($event->getRepositoryName());
@@ -229,15 +229,9 @@ class Hook
             return;
         }
 
-
-        if ($this->checkPermissions($event, $repository->getOptions())) {
-            $commandsResult['repository'] = $repository->executeCommands($this->path);
-        }
-
-
-        if ($this->checkPermissions($event, $branch->getOptions())) {
-            $commandsResult['branch'] = $branch->executeCommands($repository->getPath());
-        }
+        $commandsResult['hook'] = $this->executeCommands();
+        $commandsResult['repository'] = $repository->executeCommands($this->path);
+        $commandsResult['branch'] = $branch->executeCommands($repository->getPath());
 
         $this->sendEmails($event, $commandsResult);
 

@@ -182,7 +182,7 @@ class Hook
     /**
      * @param string|array $command command for a run
      *
-     * @return Repository
+     * @return Hook
      */
     public function addCommand($command)
     {

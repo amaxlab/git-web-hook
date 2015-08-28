@@ -1,6 +1,9 @@
 Git web hook
 ===
 
+[![Build Status](https://scrutinizer-ci.com/g/amaxlab/git-web-hook/badges/build.png?b=master)](https://scrutinizer-ci.com/g/amaxlab/git-web-hook/build-status/master)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/amaxlab/git-web-hook/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/amaxlab/git-web-hook/?branch=master)
+
 Library for handle git web hooks from gitlab.com or github.com and run commands 
 
 Features

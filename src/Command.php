@@ -50,9 +50,10 @@ class Command
         }
 
         $this->logger->info('Execute command '.$this->command.' from '.$path);
+        $out = array();
         exec($this->command, $out, $resultCode);
         $this->logger->info('Exit code =  '.$resultCode);
-        if ($resultCode != 0) {
+        if ($resultCode !== 0) {
             $this->logger->error('Cannot execute command '.$this->command.' from '.$path);
         }
 

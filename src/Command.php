@@ -1,19 +1,17 @@
 <?php
+
 /**
  * Created by PhpStorm.
  * User: zyuskin_en
  * Date: 31.12.14
- * Time: 0:18
+ * Time: 0:18.
  */
-
 namespace AmaxLab\GitWebHook;
 
 use Psr\Log\LoggerInterface;
 
 /**
- * Class Command
- *
- * @package AmaxLab\GitWebHook
+ * Class Command.
  */
 class Command
 {
@@ -34,7 +32,7 @@ class Command
     public function __construct($command, LoggerInterface $logger)
     {
         $this->command = $command;
-        $this->logger  = $logger;
+        $this->logger = $logger;
     }
 
     /**

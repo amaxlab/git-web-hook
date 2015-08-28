@@ -1,6 +1,6 @@
 <?php
 /**
- * Mail template
+ * Mail template.
  */
 use AmaxLab\GitWebHook\CommandResult;
 

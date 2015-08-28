@@ -1,11 +1,11 @@
 <?php
+
 /**
  * Created by PhpStorm.
  * User: zyuskin_en
  * Date: 31.12.14
- * Time: 9:06
+ * Time: 9:06.
  */
-
 namespace AmaxLab\GitWebHook;
 
 use Symfony\Component\HttpFoundation\Request;
@@ -13,9 +13,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Psr\Log\LoggerInterface;
 
 /**
- * Class Event
- *
- * @package AmaxLab\GitWebHook
+ * Class Event.
  */
 class Event
 {
@@ -96,7 +94,7 @@ class Event
 
         $this->host = $this->request->getClientIp();
         $queryBag = $this->request->query;
-        $this->securityCode = $queryBag->has('securityCodeFieldName')?$queryBag->get('securityCodeFieldName'): '';
+        $this->securityCode = $queryBag->has('securityCodeFieldName') ? $queryBag->get('securityCodeFieldName') : '';
 
         $body = $this->request->getContent();
 
@@ -122,13 +120,13 @@ class Event
             return;
         }
 
-        $count = count($json['commits'])-1;
-        $this->author     = $json['commits'][$count]['author']['email'];
+        $count = count($json['commits']) - 1;
+        $this->author = $json['commits'][$count]['author']['email'];
         $this->authorName = $json['commits'][$count]['author']['name'];
-        $this->message    = $json['commits'][$count]['message'];
-        $this->timestamp  = $json['commits'][$count]['timestamp'];
+        $this->message = $json['commits'][$count]['message'];
+        $this->timestamp = $json['commits'][$count]['timestamp'];
         $this->repository = $json['repository'][$this->options['repositoryFieldName']];
-        $this->branch     = substr($json['ref'], strrpos($json['ref'], '/')+1);
+        $this->branch = substr($json['ref'], strrpos($json['ref'], '/') + 1);
     }
 
     /**
@@ -180,7 +178,7 @@ class Event
     }
 
     /**
-     * @return boolean
+     * @return bool
      */
     public function isValid()
     {
@@ -221,7 +219,7 @@ class Event
         $resolver = new OptionsResolver();
         $resolver->setDefaults(array(
             'securityCodeFieldName' => 'code',
-            'repositoryFieldName'   => 'url',
+            'repositoryFieldName' => 'url',
         ));
 
         return $resolver->resolve($options);

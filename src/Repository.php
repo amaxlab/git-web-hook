@@ -1,24 +1,21 @@
 <?php
+
 /**
  * Created by PhpStorm.
  * User: zyuskin_en
  * Date: 31.12.14
- * Time: 0:10
+ * Time: 0:10.
  */
-
 namespace AmaxLab\GitWebHook;
 
 use Psr\Log\NullLogger;
 use Psr\Log\LoggerInterface;
 
 /**
- * Class Repository
- *
- * @package AmaxLab\GitWebHook
+ * Class Repository.
  */
 class Repository
 {
-
     /**
      * @var string
      */
@@ -60,7 +57,7 @@ class Repository
     {
         $this->path = $path;
         $this->name = $name;
-        $this->logger = $logger?$logger:new NullLogger();
+        $this->logger = $logger ? $logger : new NullLogger();
 
         $this->options = array_merge($defaultOptions, $options);
 
@@ -77,7 +74,7 @@ class Repository
      */
     public function addBranch($name, array $commands, $path = null, array $options = array())
     {
-        $path = $path?$path:$this->path;
+        $path = $path ? $path : $this->path;
 
         if (!array_key_exists($name, $this->branchesList)) {
             $this->logger->info('Add branch '.$name.', path: '.$path);
@@ -132,7 +129,7 @@ class Repository
      */
     public function executeCommands($path)
     {
-        $path = $this->path?$this->path:$path;
+        $path = $this->path ? $this->path : $path;
 
         $this->logger->info('Execute commands for repository '.$this->name.' ...');
         $result = array();

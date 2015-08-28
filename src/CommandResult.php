@@ -1,21 +1,18 @@
 <?php
+
 /**
  * Created by PhpStorm.
  * User: ibodnar
  * Date: 22.08.15
- * Time: 20:06
+ * Time: 20:06.
  */
-
 namespace AmaxLab\GitWebHook;
 
 /**
- * Class CommandResult
- *
- * @package AmaxLab\GitWebHook
+ * Class CommandResult.
  */
 class CommandResult
 {
-
     /**
      * @var string
      */
@@ -35,7 +32,6 @@ class CommandResult
      * @var array
      */
     protected $options;
-
 
     /**
      * @param string $command

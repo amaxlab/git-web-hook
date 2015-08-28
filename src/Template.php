@@ -1,24 +1,21 @@
 <?php
+
 /**
  * Created by PhpStorm.
  * User: ibodnar
  * Date: 23.08.15
- * Time: 11:46
+ * Time: 11:46.
  */
-
 namespace AmaxLab\GitWebHook;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
- * Class Template
- *
- * @package AmaxLab\GitWebHook
+ * Class Template.
  */
 class Template
 {
-
     /**
      * @var LoggerInterface
      */
@@ -40,8 +37,8 @@ class Template
      */
     public function __construct($scriptPath = null, LoggerInterface $logger = null)
     {
-        $this->logger = $logger?$logger:new NullLogger();
-        $this->scriptPath = $scriptPath?$scriptPath:__DIR__.'/templates/';
+        $this->logger = $logger ? $logger : new NullLogger();
+        $this->scriptPath = $scriptPath ? $scriptPath : __DIR__.'/templates/';
         $this->properties = array();
     }
 
@@ -70,7 +67,7 @@ class Template
             return '';
         }
         ob_start();
-        include($file);
+        include $file;
 
         return ob_get_clean();
     }

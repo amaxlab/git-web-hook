@@ -1,23 +1,20 @@
 <?php
+
 /**
  * Created by PhpStorm.
  * User: zyuskin_en
  * Date: 31.12.14
- * Time: 0:42
+ * Time: 0:42.
  */
-
 namespace AmaxLab\GitWebHook;
 
 use Psr\Log\LoggerInterface;
 
 /**
- * Class Branch
- *
- * @package AmaxLab\GitWebHook
+ * Class Branch.
  */
 class Branch
 {
-
     /**
      * @var string
      */
@@ -92,7 +89,7 @@ class Branch
      */
     public function executeCommands($path)
     {
-        $path = $this->path?$this->path:$path;
+        $path = $this->path ? $this->path : $path;
 
         $this->logger->info('Execute commands for branch '.$this->name.' ...');
 

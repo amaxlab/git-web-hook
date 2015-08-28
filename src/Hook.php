@@ -1,11 +1,11 @@
 <?php
+
 /**
  * Created by PhpStorm.
  * User: zyuskin_en
  * Date: 31.12.14
- * Time: 0:06
+ * Time: 0:06.
  */
-
 namespace AmaxLab\GitWebHook;
 
 use Symfony\Component\HttpFoundation\Request;
@@ -17,9 +17,7 @@ use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Parser;
 
 /**
- * Class Hook
- *
- * @package AmaxLab\GitWebHook
+ * Class Hook.
  */
 class Hook
 {
@@ -54,7 +52,7 @@ class Hook
     protected $commandsList = array();
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param string          $path    global path
      * @param array           $options hook options
@@ -63,9 +61,9 @@ class Hook
      */
     public function __construct($path = null, array $options = array(), LoggerInterface $logger = null, Request $request = null)
     {
-        $this->path    = $path?$path:getcwd();
-        $this->request = $request?$request:Request::createFromGlobals();
-        $this->logger  = $logger?$logger:new NullLogger();
+        $this->path = $path ? $path : getcwd();
+        $this->request = $request ? $request : Request::createFromGlobals();
+        $this->logger = $logger ? $logger : new NullLogger();
         $this->options = $this->validateOptions($options);
 
         $this->logger->debug('Create hook with params '.json_encode($this->options));
@@ -139,7 +137,6 @@ class Hook
      */
     public function loadRepos($dir)
     {
-
         $files = glob($dir.DIRECTORY_SEPARATOR.'*.yml');
         $count = 0;
 
@@ -168,7 +165,7 @@ class Hook
      */
     public function addRepository($name, $path = null, array $options = array(), $commands = null)
     {
-        $path = $path?$path:$this->path;
+        $path = $path ? $path : $this->path;
 
         $repository = new Repository($name, $path, $options, $this->options, $this->logger);
         $commands && $repository->addCommand($commands);
@@ -189,7 +186,6 @@ class Hook
      */
     public function addCommand($command)
     {
-
         if (is_array($command)) {
             foreach ($command as $cmd) {
                 $this->addCommand($cmd);
@@ -207,7 +203,7 @@ class Hook
     }
 
     /**
-     * Handle git web hook query
+     * Handle git web hook query.
      *
      * @param Event $event
      */
@@ -241,7 +237,6 @@ class Hook
         $commandsResult['branch'] = $branch->executeCommands($repository->getPath());
 
         $this->sendEmails($event, $commandsResult);
-
 
         $this->logger->info('End of web hook handle');
     }
@@ -374,7 +369,6 @@ class Hook
                     }
                     $mailParts[$recipient][] = $resultCommand;
                 }
-
             }
         }
 
@@ -404,12 +398,12 @@ class Hook
     {
         return new Event($this->logger, $this->request, array(
             'securityCodeFieldName' => $this->options['securityCodeFieldName'],
-            'repositoryFieldName'   => $this->options['repositoryFieldName'],
+            'repositoryFieldName' => $this->options['repositoryFieldName'],
         ));
     }
 
     /**
-     * Return 404 error
+     * Return 404 error.
      */
     private function return404()
     {
@@ -417,7 +411,6 @@ class Hook
         $response = new Response(null, 404);
         $response->send();
     }
-
 
     /**
      * @param array $options
@@ -428,15 +421,15 @@ class Hook
     {
         $resolver = new OptionsResolver();
         $resolver->setDefaults(array(
-            'sendEmails'            => false,
-            'sendEmailAuthor'       => false,
-            'sendEmailFrom'         => 'git-web-hook@'.$this->request->getHost(),
-            'mailRecipients'        => array(),
-            'allowedAuthors'        => array(),
-            'allowedHosts'          => array(),
-            'securityCode'          => '',
+            'sendEmails' => false,
+            'sendEmailAuthor' => false,
+            'sendEmailFrom' => 'git-web-hook@'.$this->request->getHost(),
+            'mailRecipients' => array(),
+            'allowedAuthors' => array(),
+            'allowedHosts' => array(),
+            'securityCode' => '',
             'securityCodeFieldName' => 'code',
-            'repositoryFieldName'   => 'url',
+            'repositoryFieldName' => 'url',
         ));
 
         return $resolver->resolve($options);
@@ -454,7 +447,7 @@ class Hook
             foreach ($config['repositories'] as $repoName => $repoConf) {
                 $repoConf = $this->resolveRepositoryConfig($repoConf);
                 $repository = $this->addRepository($repoName, $repoConf['path'], $repoConf['options'], $repoConf['commands']);
-                $count++;
+                ++$count;
 
                 // adding branches
                 if (array_key_exists('branch', $repoConf)) {

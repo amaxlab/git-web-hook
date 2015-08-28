@@ -76,12 +76,12 @@ class Template
     }
 
     /**
-     * @param string $k
+     * @param string $key
      *
      * @return mixed
      */
-    public function __get($k)
+    public function __get($key)
     {
-        return $this->properties[$k];
+        return $this->properties[$key];
     }
 }

@@ -194,7 +194,9 @@ class Hook
             foreach ($command as $cmd) {
                 $this->addCommand($cmd);
             }
-        } else {
+        }
+
+        if (is_string($command)) {
             $this->logger->info('Add hook command '.$command);
 
             $command = new Command($command, $this->logger);
@@ -266,13 +268,15 @@ class Hook
             $this->logger->info('Checking permissions '.$that.', in: '.var_export($where, true));
 
             return  in_array($that, $where) ? true : false;
-        } elseif ($where == '*' || (trim($where) == trim($that))) {
+        }
+
+        if ($where == '*' || (trim($where) == trim($that))) {
             $this->logger->info('Checking permissions '.$that.', in: '.$where);
 
             return true;
-        } else {
-            return false;
         }
+
+        return false;
     }
 
     /**
@@ -347,7 +351,7 @@ class Hook
     private function sendEmails(Event $event, array $results)
     {
         $mailParts = array();
-        foreach ($results as $key => $resultCommands) {
+        foreach ($results as $resultCommands) {
             foreach ($resultCommands as $resultCommand) {
                 $options = $resultCommand->getOptions();
 

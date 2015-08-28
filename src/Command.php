@@ -49,13 +49,13 @@ class Command
             $this->logger->error('Cannot change directory to '.$path);
 
             return array('command' => $this->command, 'errorCode' => 1);
-        } else {
-            $this->logger->info('Execute command '.$this->command.' from '.$path);
-            exec($this->command, $out, $resultCode);
-            $this->logger->info('Exit code =  '.$resultCode);
-            if ($resultCode != 0) {
-                $this->logger->error('Cannot execute command '.$this->command.' from '.$path);
-            }
+        }
+
+        $this->logger->info('Execute command '.$this->command.' from '.$path);
+        exec($this->command, $out, $resultCode);
+        $this->logger->info('Exit code =  '.$resultCode);
+        if ($resultCode != 0) {
+            $this->logger->error('Cannot execute command '.$this->command.' from '.$path);
         }
 
         return new CommandResult($this->command, $out, $resultCode, $options);

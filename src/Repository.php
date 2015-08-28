@@ -111,7 +111,11 @@ class Repository
             foreach ($command as $cmd) {
                 $this->addCommand($cmd);
             }
-        } else {
+
+            return $this;
+        }
+
+        if (is_string($command)) {
             $this->logger->info('Add to repository command: '.$command);
 
             $command = new Command($command, $this->logger);

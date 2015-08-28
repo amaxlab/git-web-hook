@@ -73,7 +73,9 @@ class Branch
             foreach ($command as $cmd) {
                 $this->addCommand($cmd);
             }
-        } else {
+        }
+
+        if (is_string($command)) {
             $this->logger->info('Add branch command '.$command);
 
             $command = new Command($command, $this->logger);

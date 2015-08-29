@@ -241,6 +241,7 @@ TODO
 * Remove old way of configuration (through php file)
 * Resolve passing config while loading config and remove unnessesary dependencies between classes hook/repository/branch/command
 * Add more tests
+* Refactor logging
 
 License
 --------

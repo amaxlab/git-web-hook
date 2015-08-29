@@ -14,32 +14,12 @@ use Psr\Log\LoggerInterface;
 /**
  * Class Repository.
  */
-class Repository
+class Repository extends BaseCommandContainer
 {
-    /**
-     * @var string
-     */
-    protected $name;
-
-    /**
-     * @var string
-     */
-    protected $path;
-
     /**
      * @var LoggerInterface
      */
     protected $logger;
-
-    /**
-     * @var array
-     */
-    protected $options;
-
-    /**
-     * @var array|Command[]
-     */
-    protected $commandsList = array();
 
     /**
      * @var array|Branch[]
@@ -98,78 +78,10 @@ class Repository
     }
 
     /**
-     * @param string|array $command command for a run
-     *
-     * @return Repository
-     */
-    public function addCommand($command)
-    {
-        if (is_array($command)) {
-            foreach ($command as $cmd) {
-                $this->addCommand($cmd);
-            }
-
-            return $this;
-        }
-
-        if (is_string($command)) {
-            $this->logger->info('Add to repository command: '.$command);
-
-            $command = new Command($command, $this->logger);
-            $this->commandsList[] = $command;
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param string $path
-     *
-     * @return array
-     */
-    public function executeCommands($path)
-    {
-        $path = $this->path ? $this->path : $path;
-
-        $this->logger->info('Execute commands for repository '.$this->name.' ...');
-        $result = array();
-
-        foreach ($this->commandsList as $command) {
-            $result[] = $command->execute($path, $this->options);
-        }
-
-        return $result;
-    }
-
-    /**
-     * @return array
-     */
-    public function getOptions()
-    {
-        return $this->options;
-    }
-
-    /**
      * @return LoggerInterface
      */
     public function getLogger()
     {
         return $this->logger;
-    }
-
-    /**
-     * @return string
-     */
-    public function getName()
-    {
-        return $this->name;
-    }
-
-    /**
-     * @return string
-     */
-    public function getPath()
-    {
-        return $this->path;
     }
 }

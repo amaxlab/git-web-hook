@@ -19,18 +19,8 @@ use Symfony\Component\Yaml\Parser;
 /**
  * Class Hook.
  */
-class Hook
+class Hook extends BaseCommandContainer
 {
-    /**
-     * @var string
-     */
-    protected $path;
-
-    /**
-     * @var array
-     */
-    protected $options = array();
-
     /**
      * @var array|Repository[]
      */
@@ -47,9 +37,9 @@ class Hook
     protected $request;
 
     /**
-     * @var array|Command[]
+     * @var CommandExecutor
      */
-    protected $commandsList = array();
+    protected $commandExecutor;
 
     /**
      * Constructor.
@@ -65,24 +55,9 @@ class Hook
         $this->request = $request ? $request : Request::createFromGlobals();
         $this->logger = $logger ? $logger : new NullLogger();
         $this->options = $this->validateOptions($options);
+        $this->commandExecutor = new CommandExecutor($this->logger);
 
         $this->logger->debug('Create hook with params '.json_encode($this->options));
-    }
-
-    /**
-     * @return array
-     */
-    public function getOptions()
-    {
-        return $this->options;
-    }
-
-    /**
-     * @return LoggerInterface
-     */
-    public function getLogger()
-    {
-        return $this->logger;
     }
 
     /**
@@ -184,26 +159,13 @@ class Hook
     }
 
     /**
-     * @param string|array $command command for a run
+     * @param string $name
      *
-     * @return Hook
+     * @return Repository|null
      */
-    public function addCommand($command)
+    public function getRepository($name)
     {
-        if (is_array($command)) {
-            foreach ($command as $cmd) {
-                $this->addCommand($cmd);
-            }
-        }
-
-        if (is_string($command)) {
-            $this->logger->info('Add hook command '.$command);
-
-            $command = new Command($command, $this->logger);
-            $this->commandsList[] = $command;
-        }
-
-        return $this;
+        return array_key_exists($name, $this->repositoryList) ? $this->repositoryList[$name] : null;
     }
 
     /**
@@ -215,7 +177,6 @@ class Hook
     {
         $event = $event ? $event : $this->createEvent();
         $this->logger->info('Starting web hook handle');
-        $commandResults = array();
 
         if (!$event->isValid()) {
             $this->logger->error('Found not valid event from '.$event->getHost());
@@ -238,23 +199,10 @@ class Hook
             return;
         }
 
-        $commandResults = array_merge($commandResults, $this->executeCommands());
-        $commandResults = array_merge($commandResults, $repository->executeCommands($this->path));
-        $commandResults = array_merge($commandResults, $branch->executeCommands($repository->getPath()));
-
+        $commandResults = $this->commandExecutor->execute(array($this, $repository, $branch));
         $this->sendEmails($event, $commandResults);
 
         $this->logger->info('End of web hook handle');
-    }
-
-    /**
-     * @param string $name
-     *
-     * @return Repository|null
-     */
-    public function getRepository($name)
-    {
-        return array_key_exists($name, $this->repositoryList) ? $this->repositoryList[$name] : null;
     }
 
     /**
@@ -315,11 +263,11 @@ class Hook
 
     /**
      * @param Event                 $event
-     * @param string                $to
+     * @param string                $recipient
      * @param string                $from
      * @param array|CommandResult[] $resultCommands
      */
-    private function sendEmail(Event $event, $to, $from, array $resultCommands)
+    private function sendEmail(Event $event, $recipient, $from, array $resultCommands)
     {
         $headers = array(
             'MIME-Version: 1.0',
@@ -337,16 +285,16 @@ class Hook
             'resultCommands' => $resultCommands,
         ));
 
-        $this->logger->info('Send email to '.$to.' subject '.$subject);
+        $this->logger->info('Send email to '.$recipient.' subject '.$subject);
         $this->logger->debug('Text of email: '.$message);
 
-        if (!mail($to, $subject, $message, implode($headers, "\r\n"))) {
-            $this->logger->error('Cannot send email to '.$to);
+        if (!mail($recipient, $subject, $message, implode($headers, "\r\n"))) {
+            $this->logger->error('Cannot send email to '.$recipient);
         }
     }
 
     /**
-     * @param Event                   $event
+     * @param Event                 $event
      * @param array|CommandResult[] $results
      */
     private function sendEmails(Event $event, array $results)
@@ -379,20 +327,6 @@ class Hook
         foreach ($mailParts as $mail => $parts) {
             $this->sendEmail($event, $mail, $this->options['sendEmailFrom'], $parts);
         }
-    }
-
-    /**
-     * @return array
-     */
-    private function executeCommands()
-    {
-        $this->logger->info('Execute commands for hook ...');
-        $result = array();
-        foreach ($this->commandsList as $command) {
-            $result[] = $command->execute($this->path, $this->options);
-        }
-
-        return $result;
     }
 
     /**

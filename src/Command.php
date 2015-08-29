@@ -8,8 +8,6 @@
  */
 namespace AmaxLab\GitWebHook;
 
-use Psr\Log\LoggerInterface;
-
 /**
  * Class Command.
  */
@@ -21,44 +19,18 @@ class Command
     protected $command;
 
     /**
-     * @var LoggerInterface
+     * @param string $command command for execution
      */
-    protected $logger;
-
-    /**
-     * @param string          $command command for execution
-     * @param LoggerInterface $logger  logger
-     */
-    public function __construct($command, LoggerInterface $logger)
+    public function __construct($command)
     {
         $this->command = $command;
-        $this->logger = $logger;
     }
 
     /**
-     * @param string $path
-     * @param array  $options
-     *
-     * @return CommandResult
+     * @return string
      */
-    public function execute($path, array $options)
+    public function getCommand()
     {
-        if (!chdir($path)) {
-            $this->logger->error('Cannot change directory to '.$path);
-
-            return new CommandResult($this->command, array(), 1, $options);
-        }
-
-        $this->logger->info('Execute command '.$this->command.' from '.$path);
-
-        exec($this->command, $out, $resultCode);
-        $out = is_array($out) ? $out : array();
-
-        $this->logger->info('Exit code =  '.$resultCode);
-        if ($resultCode !== 0) {
-            $this->logger->error('Cannot execute command '.$this->command.' from '.$path);
-        }
-
-        return new CommandResult($this->command, $out, $resultCode, $options);
+        return $this->command;
     }
 }

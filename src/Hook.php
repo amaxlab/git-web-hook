@@ -54,10 +54,10 @@ class Hook
     /**
      * Constructor.
      *
-     * @param string          $path    global path
-     * @param array           $options hook options
-     * @param LoggerInterface $logger  logger
-     * @param Request         $request Symfony request object
+     * @param string|null          $path    global path
+     * @param array                $options hook options
+     * @param LoggerInterface|null $logger  logger
+     * @param Request|null         $request Symfony request object
      */
     public function __construct($path = null, array $options = array(), LoggerInterface $logger = null, Request $request = null)
     {
@@ -156,10 +156,10 @@ class Hook
     }
 
     /**
-     * @param string $name
-     * @param string $path
-     * @param array  $options
-     * @param null   $commands
+     * @param string            $name
+     * @param string|null       $path
+     * @param array             $options
+     * @param null|array|string $commands
      *
      * @return Repository
      */
@@ -205,7 +205,7 @@ class Hook
     /**
      * Handle git web hook query.
      *
-     * @param Event $event
+     * @param Event|null $event
      */
     public function execute(Event $event = null)
     {

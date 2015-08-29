@@ -32,8 +32,8 @@ class Template
     private $properties;
 
     /**
-     * @param string          $scriptPath
-     * @param LoggerInterface $logger
+     * @param string|null          $scriptPath
+     * @param LoggerInterface|null $logger
      */
     public function __construct($scriptPath = null, LoggerInterface $logger = null)
     {

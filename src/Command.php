@@ -39,14 +39,14 @@ class Command
      * @param string $path
      * @param array  $options
      *
-     * @return array
+     * @return CommandResult
      */
     public function execute($path, array $options)
     {
         if (!chdir($path)) {
             $this->logger->error('Cannot change directory to '.$path);
 
-            return array('command' => $this->command, 'errorCode' => 1);
+            return new CommandResult($this->command, array(), 1, $options);
         }
 
         $this->logger->info('Execute command '.$this->command.' from '.$path);

@@ -47,11 +47,11 @@ class Repository
     protected $branchesList = array();
 
     /**
-     * @param string          $name           Name on the repository
-     * @param string          $path           Path to execute commands
-     * @param array           $options        Options related to current repository
-     * @param array           $defaultOptions Default options passed from hook
-     * @param LoggerInterface $logger         Logger
+     * @param string               $name           Name on the repository
+     * @param string               $path           Path to execute commands
+     * @param array                $options        Options related to current repository
+     * @param array                $defaultOptions Default options passed from hook
+     * @param LoggerInterface|null $logger         Logger
      */
     public function __construct($name, $path, array $options = array(), array $defaultOptions = array(), LoggerInterface $logger = null)
     {
@@ -65,10 +65,10 @@ class Repository
     }
 
     /**
-     * @param string $name
-     * @param array  $commands
-     * @param string $path
-     * @param array  $options
+     * @param string      $name
+     * @param array       $commands
+     * @param string|null $path
+     * @param array       $options
      *
      * @return $this
      */

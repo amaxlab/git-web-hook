@@ -34,7 +34,21 @@ class BaseCommandContainer implements CommandContainerInterface
     protected $commandsList = array();
 
     /**
-     * @param array|string[] $command
+     * @param string $name
+     * @param string $path
+     * @param array  $options
+     * @param array  $defaultOptions
+     */
+    public function __construct($name, $path, array $options = array(), array $defaultOptions = array())
+    {
+        $this->path = $path;
+        $this->name = $name;
+        $this->options = array_merge($defaultOptions, $options); // TODO resolve options to exclude wrong configuration
+        $this->commandsList = array();
+    }
+
+    /**
+     * @param array|string[]|string $command
      *
      * @return $this
      */

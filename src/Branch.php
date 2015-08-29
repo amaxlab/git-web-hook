@@ -29,13 +29,9 @@ class Branch extends BaseCommandContainer
      */
     public function __construct(Repository $repository, $name, $path, array $options = array(), array $defaultOptions = array())
     {
-        $this->path = $path;
-        $this->name = $name;
-
-        $this->options = array_merge($defaultOptions, $options);
+        parent::__construct($name, $path, $options, $defaultOptions);
 
         $this->logger = $repository->getLogger();
-
         $this->logger->debug('Create branch with params '.json_encode($this->options));
     }
 }

@@ -35,12 +35,9 @@ class Repository extends BaseCommandContainer
      */
     public function __construct($name, $path, array $options = array(), array $defaultOptions = array(), LoggerInterface $logger = null)
     {
-        $this->path = $path;
-        $this->name = $name;
+        parent::__construct($name, $path, $options, $defaultOptions);
+
         $this->logger = $logger ? $logger : new NullLogger();
-
-        $this->options = array_merge($defaultOptions, $options);
-
         $this->logger->debug('Create repository with params '.json_encode($this->options));
     }
 

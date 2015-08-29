@@ -94,7 +94,7 @@ class Hook
         try {
             $config = $yaml->parse(file_get_contents($configFile));
         } catch (ParseException $e) {
-            $this->logger->error(sprintf('Unable to parse the YAML string: %s in %s', $e->getMessage(), $e->getParsedFile()));
+            $this->logger->error('Unable to parse the YAML string: '.$e->getMessage().' in '.$e->getParsedFile());
 
             return;
         }
@@ -145,7 +145,11 @@ class Hook
             try {
                 $config = $yaml->parse(file_get_contents($file));
             } catch (ParseException $e) {
-                $this->logger->error(sprintf('Unable to parse the YAML string: %s in %s', $e->getMessage(), $e->getParsedFile()));
+                $this->logger->error('Unable to parse the YAML string: '.$e->getMessage().' in '.$e->getParsedFile());
+                continue;
+            }
+            if (!is_array($config)) {
+                $this->logger->error('Parsed config file '.$file.' is not an array');
                 continue;
             }
 
@@ -171,7 +175,7 @@ class Hook
         $commands && $repository->addCommand($commands);
 
         if (!isset($this->repositoryList[$repository->getName()])) {
-            $this->logger->info(sprintf('Add repository %s, path: %s', $repository->getName(), $repository->getPath()));
+            $this->logger->info('Add repository '.$repository->getName().', path: '.$repository->getPath());
 
             $this->repositoryList[$repository->getName()] = $repository;
         }
@@ -211,7 +215,7 @@ class Hook
     {
         $event = $event ? $event : $this->createEvent();
         $this->logger->info('Starting web hook handle');
-        $commandsResult = array();
+        $commandResults = array();
 
         if (!$event->isValid()) {
             $this->logger->error('Found not valid event from '.$event->getHost());
@@ -224,19 +228,21 @@ class Hook
             return;
         }
 
-        $repository = $this->getRepository($event->getRepositoryName());
-        if (!$repository || !($branch = $repository->getBranch($event->getBranchName()))) {
-            $this->logger->warning('Repository: '.$event->getRepositoryName().' and branch: '.$event->getBranchName().' not found in the settings');
+        $repoName = $event->getRepositoryName();
+        $branchName = $event->getBranchName();
+        $repository = $this->getRepository($repoName);
+        if (!$repository || !($branch = $repository->getBranch($branchName))) {
+            $this->logger->warning('Repository: '.$repoName.' and branch: '.$branchName.' not found in the settings');
             $this->return404();
 
             return;
         }
 
-        $commandsResult['hook'] = $this->executeCommands();
-        $commandsResult['repository'] = $repository->executeCommands($this->path);
-        $commandsResult['branch'] = $branch->executeCommands($repository->getPath());
+        $commandResults = array_merge($commandResults, $this->executeCommands());
+        $commandResults = array_merge($commandResults, $repository->executeCommands($this->path));
+        $commandResults = array_merge($commandResults, $branch->executeCommands($repository->getPath()));
 
-        $this->sendEmails($event, $commandsResult);
+        $this->sendEmails($event, $commandResults);
 
         $this->logger->info('End of web hook handle');
     }
@@ -341,34 +347,32 @@ class Hook
 
     /**
      * @param Event                   $event
-     * @param array|CommandResult[][] $results
+     * @param array|CommandResult[] $results
      */
     private function sendEmails(Event $event, array $results)
     {
         $mailParts = array();
-        foreach ($results as $resultCommands) {
-            foreach ($resultCommands as $resultCommand) {
-                $options = $resultCommand->getOptions();
+        foreach ($results as $commandResult) {
+            $options = $commandResult->getOptions();
 
-                if (!$options['sendEmails']) {
-                    continue;
-                }
+            if (!$options['sendEmails']) {
+                continue;
+            }
 
-                $mailRecipients = $options['mailRecipients'];
-                if ($options['sendEmailAuthor']) {
-                    $mailRecipients[] = $event->getAuthor();
-                }
-                $mailRecipients = array_unique($mailRecipients);
-                if (empty($mailRecipients) || empty($resultCommand->getOutput())) {
-                    continue;
-                }
+            $mailRecipients = $options['mailRecipients'];
+            if ($options['sendEmailAuthor']) {
+                $mailRecipients[] = $event->getAuthor();
+            }
+            $mailRecipients = array_unique($mailRecipients);
+            if (empty($mailRecipients) || empty($commandResult->getOutput())) {
+                continue;
+            }
 
-                foreach ($mailRecipients as $recipient) {
-                    if (!array_key_exists($recipient, $mailParts)) {
-                        $mailParts[$recipient] = array();
-                    }
-                    $mailParts[$recipient][] = $resultCommand;
+            foreach ($mailRecipients as $recipient) {
+                if (!array_key_exists($recipient, $mailParts)) {
+                    $mailParts[$recipient] = array();
                 }
+                $mailParts[$recipient][] = $commandResult;
             }
         }
 

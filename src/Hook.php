@@ -312,7 +312,7 @@ class Hook extends BaseCommandContainer
                 $mailRecipients[] = $event->getAuthor();
             }
             $mailRecipients = array_unique($mailRecipients);
-            if (empty($mailRecipients) || empty($commandResult->getOutput())) {
+            if (empty($mailRecipients) || !is_array($commandResult->getOutput()) || count($commandResult->getOutput()) == 0) {
                 continue;
             }
 

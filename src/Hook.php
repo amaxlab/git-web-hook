@@ -415,8 +415,8 @@ class Hook extends BaseCommandContainer
 
         try {
             return $resolver->resolve($mainConfig);
-        } catch(InvalidArgumentException $exception) {
-            $this->logger->critical('Couldn\'t resolve main configuration file: ' . $exception->getTraceAsString());
+        } catch (InvalidArgumentException $exception) {
+            $this->logger->critical('Couldn\'t resolve main configuration file: '.$exception->getTraceAsString());
             throw $exception;
         }
     }
@@ -444,7 +444,6 @@ class Hook extends BaseCommandContainer
         return $resolver->resolve($options);
     }
 
-
     /**
      * @param array $repositoryConfig
      *
@@ -468,8 +467,8 @@ class Hook extends BaseCommandContainer
 
         try {
             return $resolver->resolve($repositoryConfig);
-        } catch(InvalidArgumentException $exception) {
-            $this->logger->critical('Couldn\'t resolve repository config: ' . $exception->getTraceAsString());
+        } catch (InvalidArgumentException $exception) {
+            $this->logger->critical('Couldn\'t resolve repository config: '.$exception->getTraceAsString());
             throw $exception;
         }
     }
@@ -495,8 +494,8 @@ class Hook extends BaseCommandContainer
 
         try {
             return $resolver->resolve($branchConfig);
-        } catch(InvalidArgumentException $exception) {
-            $this->logger->critical('Couldn\'t resolve branch config: ' . $exception->getTraceAsString());
+        } catch (InvalidArgumentException $exception) {
+            $this->logger->critical('Couldn\'t resolve branch config: '.$exception->getTraceAsString());
             throw $exception;
         }
     }

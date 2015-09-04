@@ -10,8 +10,6 @@ namespace AmaxLab\GitWebHook;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\OptionsResolver\Exception\InvalidArgumentException;
-use Symfony\Component\OptionsResolver\OptionsResolver;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\Yaml\Exception\ParseException;
@@ -43,6 +41,11 @@ class Hook extends BaseCommandContainer
     protected $commandExecutor;
 
     /**
+     * @var Configurator
+     */
+    protected $configurator;
+
+    /**
      * Constructor.
      *
      * @param string|null          $path    global path
@@ -55,7 +58,8 @@ class Hook extends BaseCommandContainer
         $this->path = $path ? $path : getcwd();
         $this->request = $request ? $request : Request::createFromGlobals();
         $this->logger = $logger ? $logger : new NullLogger();
-        $this->options = $this->resolveOptions($options);
+        $this->configurator = new Configurator($this->logger, $this->request);
+        $this->options = $this->configurator->resolveOptions($options);
         $this->commandExecutor = new CommandExecutor($this->logger);
 
         $this->logger->debug('Create hook with params '.json_encode($this->options));
@@ -70,30 +74,27 @@ class Hook extends BaseCommandContainer
         try {
             $config = $yaml->parse(file_get_contents($configFile));
         } catch (ParseException $e) {
-            $this->logger->error('Unable to parse the YAML string: '.$e->getMessage().' in '.$e->getParsedFile());
+            $this->logger->critical('Unable to parse the YAML string: '.$e->getMessage().' in '.$e->getParsedFile());
 
             return;
         }
         if (!is_array($config)) {
-            $this->logger->error('Parsed config file is not an array');
+            $this->logger->critical('Parsed config file is not an array');
 
             return;
         }
 
-        $config = $this->resolveMainConfig($config);
+        $config = $this->configurator->resolveMainConfig($config);
 
+        //trusted proxies
         if (array_key_exists('trustedProxies', $config)) {
-            $arrayOfProxies = $config['trustedProxies'];
-            if (is_string($config['trustedProxies'])) {
-                $arrayOfProxies = array($config['trustedProxies']);
-            }
+            $arrayOfProxies = is_string($config['trustedProxies']) ? array($config['trustedProxies']) : $config['trustedProxies'];
             Request::setTrustedProxies($arrayOfProxies);
         }
 
         //global hook options
         if (array_key_exists('options', $config)) {
-            $options = $config['options'];
-            $this->options = $this->resolveOptions($options);
+            $this->options = $this->configurator->resolveOptions($config['options']);
         }
 
         // global hook commands
@@ -101,14 +102,17 @@ class Hook extends BaseCommandContainer
             $this->addCommand($config['commands']);
         }
 
+        // global path
         if (array_key_exists('path', $config)) {
             $this->path = $config['path'];
         }
 
+        // configure global repositories
         if (array_key_exists('repositories', $config)) {
             $this->handleRepositoryConfig($config);
         }
 
+        // configure repositoriesDir
         if (array_key_exists('repositoriesDir', $config)) {
             $this->loadRepos($config['repositoriesDir']);
         }
@@ -369,14 +373,14 @@ class Hook extends BaseCommandContainer
         $count = 0;
         if (is_array($config) && array_key_exists('repositories', $config)) {
             foreach ($config['repositories'] as $repoName => $repoConf) {
-                $repoConf = $this->resolveRepositoryConfig($repoConf);
+                $repoConf = $this->configurator->resolveRepositoryConfig($repoConf);
                 $repository = $this->addRepository($repoName, $repoConf['path'], $repoConf['options'], $repoConf['commands']);
                 ++$count;
 
                 // adding branches
                 if (array_key_exists('branch', $repoConf)) {
                     foreach ($repoConf['branch'] as $branchName => $branchOptions) {
-                        $branchOptions = $this->resolveBranchConfig($branchOptions);
+                        $branchOptions = $this->configurator->resolveBranchConfig($branchOptions);
                         $repository->addBranch($branchName, $branchOptions['commands'], $branchOptions['path'], $branchOptions['options']);
                     }
                 }
@@ -384,119 +388,5 @@ class Hook extends BaseCommandContainer
         }
 
         return $count;
-    }
-
-    /**
-     * @param array $mainConfig
-     *
-     * @return array
-     */
-    private function resolveMainConfig(array $mainConfig)
-    {
-        $resolver = new OptionsResolver();
-        $resolver
-            ->setDefaults(array(
-                'path' => null,
-                'commands' => array(),
-                'options' => array(),
-            ))
-            ->setDefined(array(
-                'trustedProxies',
-                'repositoriesDir',
-                'repositories',
-            ))
-            ->setAllowedTypes('trustedProxies', array('array', 'string'))
-            ->setAllowedTypes('repositoriesDir', 'string')
-            ->setAllowedTypes('commands', 'array')
-            ->setAllowedTypes('options', 'array')
-            ->setAllowedTypes('repositories', 'array')
-            ->setAllowedTypes('path', array('string', 'null'))
-        ;
-
-        try {
-            return $resolver->resolve($mainConfig);
-        } catch (InvalidArgumentException $exception) {
-            $this->logger->critical('Couldn\'t resolve main configuration file: '.$exception->getTraceAsString());
-            throw $exception;
-        }
-    }
-
-    /**
-     * @param array $options
-     *
-     * @return array
-     */
-    private function resolveOptions(array $options)
-    {
-        $resolver = new OptionsResolver();
-        $resolver->setDefaults(array(
-            'sendEmails' => false,
-            'sendEmailAuthor' => false,
-            'sendEmailFrom' => 'git-web-hook@'.$this->request->getHost(),
-            'mailRecipients' => array(),
-            'allowedAuthors' => array(),
-            'allowedHosts' => array(),
-            'securityCode' => '',
-            'securityCodeFieldName' => 'code',
-            'repositoryFieldName' => 'url',
-        ));
-
-        return $resolver->resolve($options);
-    }
-
-    /**
-     * @param array $repositoryConfig
-     *
-     * @return array
-     */
-    private function resolveRepositoryConfig(array $repositoryConfig)
-    {
-        $resolver = new OptionsResolver();
-        $resolver
-            ->setDefaults(array(
-                'path' => null,
-                'commands' => array(),
-                'options' => array(),
-                'branch' => array(),
-            ))
-            ->setAllowedTypes('commands', 'array')
-            ->setAllowedTypes('options', 'array')
-            ->setAllowedTypes('branch', 'array')
-            ->setAllowedTypes('path', array('string', 'null'))
-        ;
-
-        try {
-            return $resolver->resolve($repositoryConfig);
-        } catch (InvalidArgumentException $exception) {
-            $this->logger->critical('Couldn\'t resolve repository config: '.$exception->getTraceAsString());
-            throw $exception;
-        }
-    }
-
-    /**
-     * @param array $branchConfig
-     *
-     * @return array
-     */
-    private function resolveBranchConfig(array $branchConfig)
-    {
-        $resolver = new OptionsResolver();
-        $resolver
-            ->setDefaults(array(
-                'path' => null,
-                'commands' => array(),
-                'options' => array(),
-            ))
-            ->setAllowedTypes('commands', 'array')
-            ->setAllowedTypes('options', 'array')
-            ->setAllowedTypes('path', array('string', 'null'))
-        ;
-
-        try {
-            return $resolver->resolve($branchConfig);
-        } catch (InvalidArgumentException $exception) {
-            $this->logger->critical('Couldn\'t resolve branch config: '.$exception->getTraceAsString());
-            throw $exception;
-        }
     }
 }

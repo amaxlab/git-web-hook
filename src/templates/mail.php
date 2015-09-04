@@ -36,7 +36,7 @@ use AmaxLab\GitWebHook\CommandResult;
                         <td style="color: <?php echo $color ?>" colspan="2">
                             <span style="font-weight: bold;">Result of command <?php echo $result->getCommand() ?>:</span>
                         </td>
-                    </tr>';
+                    </tr>
                 <?php
                 foreach ($result->getOutput() as $line) {
                     echo '<tr><td colspan="2">'.$line.'</td></tr>';

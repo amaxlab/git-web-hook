@@ -1,24 +1,22 @@
 <?php
+
 /**
  * Created by PhpStorm.
  * User: ibodnar
  * Date: 23.08.15
- * Time: 12:23
+ * Time: 12:23.
  */
-
 namespace AmaxLab\GitWebHook\Tests;
 
 use AmaxLab\GitWebHook\Template;
 
 /**
- * Class TemplateMethodsTestTest
- *
- * @package AmaxLab\GitWebHook\Tests
+ * Class TemplateMethodsTestTest.
  */
 class TemplateMethodsTest extends GWHTestCase
 {
     /**
-     * Test render method
+     * Test render method.
      */
     public function testRender()
     {

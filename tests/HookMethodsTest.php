@@ -1,29 +1,25 @@
 <?php
+
 /**
  * Created by PhpStorm.
  * User: ibodnar
  * Date: 18.06.15
- * Time: 17:10
+ * Time: 17:10.
  */
-
 namespace AmaxLab\GitWebHook\Tests;
 
 use AmaxLab\GitWebHook\Hook;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
-use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * Class HookTest
- *
- * @package AmaxLab\GitWebHook\Tests
+ * Class HookTest.
  */
 class HookTest extends GWHTestCase
 {
-
     /**
-     * Execution test
+     * Execution test.
      */
     public function testExecute()
     {
@@ -31,13 +27,12 @@ class HookTest extends GWHTestCase
         $json = '{"ref":"refs/heads/master","repository":{"name":"git-web-hook-test","url":"'.$repoUrl.'"},"commits":[{"id":"06f9ce8478e0973ec17b6253000a1f1f140c322b","message":"test commit1","timestamp":"2014-12-25T15:20:16+06:00","author":{"name":"Egor Zyuskin","email":"egor@zyuskin.ru"}}]}';
 
         $options = array(
-            'sendEmails'          => false,
-            'sendEmailAuthor'     => false,
-            'mailRecipients'      => array(),
-            'allowedAuthors'      => '*',
-            'allowedHosts'        => '*',
+            'sendEmails' => false,
+            'sendEmailAuthor' => false,
+            'mailRecipients' => array(),
+            'allowedAuthors' => '*',
+            'allowedHosts' => '*',
         );
-
 
         $repoDir = $this->makeTempDir('repo');
         $logFile = $this->makeFile($this->baseTempDir, 'hook.log');
@@ -61,14 +56,13 @@ class HookTest extends GWHTestCase
                 'git pull origin master',
             ));
 
-
         $hook->execute();
         $content = file_get_contents($logFile);
         $this->assertEmpty($content, sprintf('Log file is not empty: %s', $content));
     }
 
     /**
-     * Load config test
+     * Load config test.
      */
     public function testLoadConfig()
     {
@@ -84,30 +78,7 @@ class HookTest extends GWHTestCase
         $this->generateRepoConfigFile($testFile, 3);
 
         $mainConfigFile = $this->makeFile($this->baseTempDir, 'main_config.yml');
-        file_put_contents($mainConfigFile, 'options:
-    sendEmails: false
-    sendEmailAuthor: false
-    allowedAuthors: \'*\'
-    allowedHosts: \'*\'
-trustedProxies: [192.168.0.2, 192.168.0.3]
-repositoriesDir: '.$reposDir.'
-repositories:
-    git@github.com:amaxlab/git-web-hook-test.git:
-        path: null
-        options: {}
-        commands:
-          - git status
-        branch:
-            master:
-                path: null
-                options: { mailRecipients: [ test@test.test ] }
-                commands:
-                  - git reset --hard HEAD
-                  - git pull origin master
-            production:
-                commands:
-                  - git reset --hard HEAD
-                  - git pull origin production');
+        file_put_contents($mainConfigFile, $this->configTemplates->render('config1.php', array('reposDir' => $reposDir)));
         $hook->loadConfig($mainConfigFile);
         $options = $hook->getOptions();
         $this->assertFalse($options['sendEmails'], 'Wrong loaded configuration option sendEmails ');
@@ -135,16 +106,16 @@ repositories:
     }
 
     /**
-     * Test loading of repository configurations
+     * Test loading of repository configurations.
      */
     public function testLoadRepos()
     {
         $options = array(
-            'sendEmails'          => false,
-            'sendEmailAuthor'     => false,
-            'mailRecipients'      => array(),
-            'allowedAuthors'      => '*',
-            'allowedHosts'        => '*',
+            'sendEmails' => false,
+            'sendEmailAuthor' => false,
+            'mailRecipients' => array(),
+            'allowedAuthors' => '*',
+            'allowedHosts' => '*',
         );
         $hook = new Hook(__DIR__, $options);
 
@@ -155,48 +126,13 @@ repositories:
         $count = $hook->loadRepos($testFile1);
         $this->assertEquals(0, $count, 'Wrong number of loaded repositories');
 
-        for ($i = 1; $i <= 3; $i++) {
+        for ($i = 1; $i <= 3; ++$i) {
             $this->generateRepoConfigFile($testFile1, $i);
             $count = $hook->loadRepos($reposDir);
             $this->assertEquals($i, $count, sprintf('Wrong number of loaded repositories, found %s, expected %s', $count, $i));
         }
-
         $this->generateRepoConfigFile($testFile2, 2);
         $count = $hook->loadRepos($reposDir);
         $this->assertEquals(5, $count, sprintf('Wrong number of loaded repositories, found %s, expected %s', $count, 5));
-    }
-
-    /**
-     * Generates some configurations files for testing purposes
-     *
-     * @param string $file
-     * @param int    $countOfBuilders
-     */
-    private function generateRepoConfigFile($file, $countOfBuilders)
-    {
-        $output = "repositories:\r\n";
-
-
-        for ($i = 1; $i <= $countOfBuilders; $i++) {
-            $output .= '    git@github.com:amaxlab/git-web-hook-test'.$i.'.git:
-        path: null
-        options: {}
-        commands:
-          - git status
-        branch:
-            master:
-                path: null
-                options: {}
-                commands:
-                  - git reset --hard HEAD
-                  - git pull origin master
-            production:
-                commands:
-                  - git reset --hard HEAD
-                  - git pull origin production
-';
-        }
-
-        file_put_contents($file, $output);
     }
 }

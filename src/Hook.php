@@ -10,6 +10,7 @@ namespace AmaxLab\GitWebHook;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\OptionsResolver\Exception\InvalidArgumentException;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -54,7 +55,7 @@ class Hook extends BaseCommandContainer
         $this->path = $path ? $path : getcwd();
         $this->request = $request ? $request : Request::createFromGlobals();
         $this->logger = $logger ? $logger : new NullLogger();
-        $this->options = $this->validateOptions($options);
+        $this->options = $this->resolveOptions($options);
         $this->commandExecutor = new CommandExecutor($this->logger);
 
         $this->logger->debug('Create hook with params '.json_encode($this->options));
@@ -82,13 +83,17 @@ class Hook extends BaseCommandContainer
         $config = $this->resolveMainConfig($config);
 
         if (array_key_exists('trustedProxies', $config)) {
-            Request::setTrustedProxies($config['trustedProxies']);
+            $arrayOfProxies = $config['trustedProxies'];
+            if (is_string($config['trustedProxies'])) {
+                $arrayOfProxies = array($config['trustedProxies']);
+            }
+            Request::setTrustedProxies($arrayOfProxies);
         }
 
         //global hook options
         if (array_key_exists('options', $config)) {
             $options = $config['options'];
-            $this->options = $this->validateOptions($options);
+            $this->options = $this->resolveOptions($options);
         }
 
         // global hook commands
@@ -102,6 +107,10 @@ class Hook extends BaseCommandContainer
 
         if (array_key_exists('repositories', $config)) {
             $this->handleRepositoryConfig($config);
+        }
+
+        if (array_key_exists('repositoriesDir', $config)) {
+            $this->loadRepos($config['repositoriesDir']);
         }
     }
 
@@ -213,13 +222,13 @@ class Hook extends BaseCommandContainer
      */
     private function checkAllow($where, $that)
     {
-        if (is_array($where)) {
+        if (is_array($where) && !array_search('*', $where)) {
             $this->logger->info('Checking permissions '.$that.', in: '.var_export($where, true));
 
             return  in_array($that, $where) ? true : false;
         }
 
-        if ($where == '*' || (trim($where) == trim($that))) {
+        if ($where == '*' || (is_array($where) && array_search('*', $where)) || (trim($where) == trim($that))) {
             $this->logger->info('Checking permissions '.$that.', in: '.$where);
 
             return true;
@@ -351,29 +360,6 @@ class Hook extends BaseCommandContainer
     }
 
     /**
-     * @param array $options
-     *
-     * @return array
-     */
-    private function validateOptions(array $options)
-    {
-        $resolver = new OptionsResolver();
-        $resolver->setDefaults(array(
-            'sendEmails' => false,
-            'sendEmailAuthor' => false,
-            'sendEmailFrom' => 'git-web-hook@'.$this->request->getHost(),
-            'mailRecipients' => array(),
-            'allowedAuthors' => array(),
-            'allowedHosts' => array(),
-            'securityCode' => '',
-            'securityCodeFieldName' => 'code',
-            'repositoryFieldName' => 'url',
-        ));
-
-        return $resolver->resolve($options);
-    }
-
-    /**
      * @param array $config
      *
      * @return int
@@ -419,7 +405,7 @@ class Hook extends BaseCommandContainer
                 'repositoriesDir',
                 'repositories',
             ))
-            ->setAllowedTypes('trustedProxies', 'array')
+            ->setAllowedTypes('trustedProxies', array('array', 'string'))
             ->setAllowedTypes('repositoriesDir', 'string')
             ->setAllowedTypes('commands', 'array')
             ->setAllowedTypes('options', 'array')
@@ -427,8 +413,37 @@ class Hook extends BaseCommandContainer
             ->setAllowedTypes('path', array('string', 'null'))
         ;
 
-        return $resolver->resolve($mainConfig);
+        try {
+            return $resolver->resolve($mainConfig);
+        } catch(InvalidArgumentException $exception) {
+            $this->logger->critical('Couldn\'t resolve main configuration file: ' . $exception->getTraceAsString());
+            throw $exception;
+        }
     }
+
+    /**
+     * @param array $options
+     *
+     * @return array
+     */
+    private function resolveOptions(array $options)
+    {
+        $resolver = new OptionsResolver();
+        $resolver->setDefaults(array(
+            'sendEmails' => false,
+            'sendEmailAuthor' => false,
+            'sendEmailFrom' => 'git-web-hook@'.$this->request->getHost(),
+            'mailRecipients' => array(),
+            'allowedAuthors' => array(),
+            'allowedHosts' => array(),
+            'securityCode' => '',
+            'securityCodeFieldName' => 'code',
+            'repositoryFieldName' => 'url',
+        ));
+
+        return $resolver->resolve($options);
+    }
+
 
     /**
      * @param array $repositoryConfig
@@ -451,7 +466,12 @@ class Hook extends BaseCommandContainer
             ->setAllowedTypes('path', array('string', 'null'))
         ;
 
-        return $resolver->resolve($repositoryConfig);
+        try {
+            return $resolver->resolve($repositoryConfig);
+        } catch(InvalidArgumentException $exception) {
+            $this->logger->critical('Couldn\'t resolve repository config: ' . $exception->getTraceAsString());
+            throw $exception;
+        }
     }
 
     /**
@@ -473,6 +493,11 @@ class Hook extends BaseCommandContainer
             ->setAllowedTypes('path', array('string', 'null'))
         ;
 
-        return $resolver->resolve($branchConfig);
+        try {
+            return $resolver->resolve($branchConfig);
+        } catch(InvalidArgumentException $exception) {
+            $this->logger->critical('Couldn\'t resolve branch config: ' . $exception->getTraceAsString());
+            throw $exception;
+        }
     }
 }
